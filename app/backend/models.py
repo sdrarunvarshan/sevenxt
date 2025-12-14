@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional , List
 
 class Token(BaseModel):
     access_token: str
@@ -52,15 +52,13 @@ class B2CRegister(BaseModel):
     phone_number: Optional[str] = None
     raw_user_meta_data: Optional[dict] = None
     address: Optional[AddressPayload] = None
-
- class OrderedProductBase(BaseModel):
+class OrderedProductBase(BaseModel):
     name: str
     imageUrl: str
     quantity: int
     colorHex: str
 
 class OrderCreate(BaseModel):
-    # Data coming from Flutter CartScreen when proceeding to checkout
     order_id: str # Unique ID from Flutter (e.g., timestamp)
     placed_on: str # Date string
     order_status: str # e.g., 'processing'
@@ -73,4 +71,5 @@ class OrderCreate(BaseModel):
     shipping_fee: float
     customer_email: str
     customer_address_text: str
-    user_type: str = "b2c"    
+    user_type: str = "b2c" 
+   
