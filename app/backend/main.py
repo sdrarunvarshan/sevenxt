@@ -30,7 +30,13 @@ from dotenv import load_dotenv
 
 
 UPLOAD_FOLDER = "uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+BASE_UPLOAD_DIR = os.path.join(UPLOAD_FOLDER, "business", "app")
+GST_DIR = os.path.join(BASE_UPLOAD_DIR, "gst")
+LICENSE_DIR = os.path.join(BASE_UPLOAD_DIR, "license")
+
+os.makedirs(GST_DIR, exist_ok=True)
+os.makedirs(LICENSE_DIR, exist_ok=True)
+
 
 load_dotenv()
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")  # Fallback for local dev
@@ -66,8 +72,7 @@ app.add_middleware(
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 # Ensure upload directories exist
-for _dir in ("uploads", "uploads/b2b/gst", "uploads/b2b/license"):
-    os.makedirs(_dir, exist_ok=True)
+
 
 
 def normalize_product_dates(product):
@@ -461,20 +466,20 @@ async def register_b2b(
         """, (user_id, email, hashed_pw, business_name, phone, "{}"))
 
         # ✅ Save documents
-        os.makedirs("uploads/b2b/gst", exist_ok=True)
-        os.makedirs("uploads/b2b/license", exist_ok=True)
+        gst_filename = f"{user_id}_{gst_certificate.filename}"
+        license_filename = f"{user_id}_{business_license.filename}"
 
-        gst_filename = f"{uuid.uuid4().hex}_{os.path.basename(gst_certificate.filename)}"
-        license_filename = f"{uuid.uuid4().hex}_{os.path.basename(business_license.filename)}"
+        gst_fs_path = os.path.join(GST_DIR, gst_filename)
+        license_fs_path = os.path.join(LICENSE_DIR, license_filename)
 
-        gst_path = os.path.join("uploads", "b2b", "gst", gst_filename)
-        license_path = os.path.join("uploads", "b2b", "license", license_filename)
+        with open(gst_fs_path, "wb") as f:
+             f.write(await gst_certificate.read())
 
-        with open(gst_path, "wb") as f:
-            f.write(await gst_certificate.read())
+        with open(license_fs_path, "wb") as f:
+             f.write(await business_license.read())
 
-        with open(license_path, "wb") as f:
-            f.write(await business_license.read())
+        gst_public_url = f"{BASE_URL}/uploads/business/app/gst/{gst_filename}"
+        license_public_url = f"{BASE_URL}/uploads/business/app/license/{license_filename}"
 
         # ✅ Address handling
         address_id = None
@@ -517,8 +522,8 @@ async def register_b2b(
             pan,
             email,
             phone,
-            gst_path,
-            license_path,
+            gst_public_url,
+            license_public_url,
             "pending_approval",
             now,
             address_id
