@@ -14,7 +14,7 @@ def get_db_connection():
     try:
         connection = psycopg2.connect(
             # REPLACE with your System A (Office) IP address from ipconfig
-            host="localhost", 
+            host="192.168.1.6", 
             
             # Your PostgreSQL credentials
             user="postgres",
