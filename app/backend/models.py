@@ -109,6 +109,7 @@ class OrderCreate(BaseModel):
     phone: str
     customer_address_text: str
     user_type: str = "b2c" 
+    customer_type: Optional[str] = None
     payment_status: str
     payment_method: str
     hsn: Optional[str] = ""  # Add this
