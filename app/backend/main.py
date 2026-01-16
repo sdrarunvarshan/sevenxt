@@ -380,9 +380,9 @@ async def register_b2c(payload: B2CRegister):
         if payload.address:
             address_id = str(uuid.uuid4())
             cursor.execute("""
-                INSERT INTO addresses (id, address, city, pincode, country, user_id)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """, (address_id, payload.address.address, payload.address.city, 
+                INSERT INTO addresses (id, address, city, state,pincode, country, user_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (address_id, payload.address.address, payload.address.state,payload.address.city, 
                   payload.address.pincode, payload.address.country, user_id))
 
             cursor.execute("""
