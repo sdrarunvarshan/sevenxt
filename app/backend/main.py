@@ -123,6 +123,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
     
     return user["id"] # Return the user_id
+    
 
 @app.post("/auth/send-verification")
 async def send_verification(payload: PhoneRequest):
@@ -938,7 +939,7 @@ async def get_products(
                 b2c_offer_start_date, b2c_offer_end_date,sgst,
                 cgst,b2b_offer_start_date, b2b_offer_end_date,
                 compare_at_price ,info,
-                weight, length, breadth, height,hsn
+                weight, length, breadth, return_policy,height,hsn
                 -- rating, reviews REMOVED: These columns don't exist in products table
             FROM products WHERE 1=1
         """
@@ -1071,7 +1072,7 @@ async def search_products(
                 b2c_discount, b2b_discount,
                 b2c_offer_start_date, b2c_offer_end_date,sgst,
                 cgst,b2b_offer_start_date, b2b_offer_end_date,
-                weight, length, breadth, height,hsn,
+                weight, length, breadth, return_policy,height,hsn,
                 compare_at_price,
                 info
             FROM products 
@@ -1149,7 +1150,7 @@ async def get_product(product_id: str, user_type: Optional[str] = None):
                 b2c_offer_price, b2b_offer_price,
                 b2c_discount, b2b_discount,
                 b2c_offer_start_date, b2c_offer_end_date,sgst,
-                cgst,weight, length, breadth, height,
+                cgst,weight, length, breadth, return_policy,height,
                 b2b_offer_start_date, b2b_offer_end_date,
                 hsn,
                 compare_at_price,info
@@ -1541,14 +1542,8 @@ async def place_order_from_app(order_data: OrderCreate, current_user_id: str = D
     
     try:
         # Get user type from token
-        try:
-            from fastapi import Request
-            request = Request.scope.get("request")
-            token = request.headers.get("authorization").split(" ")
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            actual_user_type = payload.get("user_type", "b2c")
-        except:
-            actual_user_type = order_data.user_type
+        actual_customer_type = order_data.customer_type or "b2c"
+
 
         # Extract order-level dimensions and HSN (use values from first product or calculate aggregate)
         hsn_code = ""
@@ -1590,7 +1585,7 @@ async def place_order_from_app(order_data: OrderCreate, current_user_id: str = D
             order_data.sgst_percentage,  
             order_data.cgst_percentage,
             len(order_data.products),
-            actual_user_type,
+            actual_customer_type,
             order_data.order_status,
             order_data.payment_status,
             order_data.payment_method,
