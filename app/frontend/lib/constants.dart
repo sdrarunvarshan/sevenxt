@@ -17,7 +17,7 @@ const grandisExtendedFont = "poppins-extrabold";
 
 const Color kPrimaryColor = Color(0xFFEF4444); // Red-500
 const Color kPrimaryDark = Color(0xFFDC2626); // Red-600
-const Color kBackgroundColor = Colors.white;
+const Color kBackgroundColor = Color(0xFFFFFFFF);
 const Color kSurfaceColor = Color(0xFFF3F4F6); // Gray-100
 const double kBorderRadius = 16.0;
 
@@ -53,8 +53,9 @@ const Color whileColor20 = Color(0xFF333333);
 const Color whileColor10 = Color(0xFF191919);
 const Color whileColor5 = Color(0xFF0D0D0D);
 
+
 const Color greyColor = Color(0xFFB8B5C3);
-const Color lightGreyColor = Color(0xFFF8F8F9);
+const Color lightGreyColor = Color(0xFFF0F0F0);
 const Color darkGreyColor = Color(0xFF1C1C25);
 
 const Color secondaryColor = kPrimaryColor; // Replaced purpleColor

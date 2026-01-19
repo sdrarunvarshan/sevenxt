@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:shop/components/cart_button.dart';
-import 'package:shop/components/custom_modal_bottom_sheet.dart';
-import 'package:shop/components/network_image_with_loader.dart';
-import 'package:shop/models/product_model.dart'; // Import ProductModel
-import 'package:shop/screens/product/views/added_to_cart_message_screen.dart';
-import 'package:shop/screens/product/views/components/product_list_tile.dart';
-import 'package:shop/models/cart_model.dart'; // Import CartModel
-import 'package:shop/screens/product/views/bookmark_manager.dart';
+import 'package:sevenext/components/cart_button.dart';
+import 'package:sevenext/components/custom_modal_bottom_sheet.dart';
+import 'package:sevenext/components/network_image_with_loader.dart';
+import 'package:sevenext/models/product_model.dart'; // Import ProductModel
+import 'package:sevenext/screens/product/views/added_to_cart_message_screen.dart';
+import 'package:sevenext/screens/product/views/components/product_list_tile.dart';
+import 'package:sevenext/models/cart_model.dart'; // Import CartModel
+import 'package:sevenext/screens/product/views/product_details_screen.dart';
 
 
 import '../../../constants.dart';
@@ -18,25 +18,33 @@ import 'components/unit_price.dart';
 
 class ProductBuyNowScreen extends StatefulWidget {
   // Add product parameter to the constructor
-  const ProductBuyNowScreen({super.key, this.product});
+  const ProductBuyNowScreen({super.key, this.product, this.selectedColorIndex});
 
   final ProductModel? product; // Make it nullable
+  final int? selectedColorIndex; // Add selectedColorIndex parameter
 
   @override
   _ProductBuyNowScreenState createState() => _ProductBuyNowScreenState();
 }
 
 class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
+  late int selectedColorIndex;
+  @override
+  void initState() {
+    super.initState();
+    selectedColorIndex = widget.selectedColorIndex ?? 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       bottomNavigationBar: CartButton(
-        price: widget.product?.price ?? 269.4,
+        price: widget.product?.finalPrice ?? 269.4,
         title: "Add to cart",
         subTitle: "Total price",
         press: () {
           if (widget.product != null) {
-            Cart().addItem(widget.product!, 'selectedColor'); // Add selectedColor parameter
+            Cart().addItem(widget.product!, widget.product!.colors[selectedColorIndex], weightKg: widget.product!.weightKg, lengthCm: widget.product!.lengthCm, breadthCm: widget.product!.breadthCm, heightCm: widget.product!.heightCm, ); // Add selectedColor parameter
           }
           customModalBottomSheet(
             context,
@@ -98,11 +106,13 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
                           child: UnitPrice(
                             // Use product price
                             price: widget.product?.price ?? 145,
-                            priceAfterDiscount: widget.product?.priceAfterDiscount ?? 134.7,
+                            priceAfterDiscount: widget.product?.priceAfetDiscount,
+                            discountPercent: widget.product?.discountPercentUI,
+
                           ),
                         ),
                         ProductQuantity(
-                          numOfItem: 2, // This might need to be managed if it's part of product selection
+                          numOfItem: 1, // This might need to be managed if it's part of product selection
                           onIncrement: () {},
                           onDecrement: () {},
                         ),
@@ -113,16 +123,13 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
                 const SliverToBoxAdapter(child: Divider()),
                 SliverToBoxAdapter(
                   child: SelectedColors(
-                    // This part would need to be updated based on available colors for the product
-                    colors: const [
-                      Color(0xFFEA6262),
-                      Color(0xFFB1CC63),
-                      Color(0xFFFFBF5F),
-                      Color(0xFF9FE1DD),
-                      Color(0xFFC482DB),
-                    ],
-                    selectedColorIndex: 2,
-                    press: (value) {},
+                  colors: widget.product!.colors,
+                    selectedColorIndex: selectedColorIndex , // This part would need to be updated based on available colors for the product
+                    press: (value) {
+                      setState(() {
+                        selectedColorIndex = value;
+                      });
+                    },
                   ),
                 ),
                 const SliverToBoxAdapter(

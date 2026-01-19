@@ -1,8 +1,8 @@
 // lib/widgets/guest_protected_route.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shop/route/guest_services.dart';
-import 'package:shop/route/route_constants.dart';
+import 'package:sevenext/route/guest_services.dart';
+import 'package:sevenext/route/route_constants.dart';
 
 class GuestProtectedRoute extends StatelessWidget {
   final Widget child;
@@ -31,14 +31,14 @@ class GuestProtectedRoute extends StatelessWidget {
     final restrictedRoutes = [
       profileScreenRoute,
       ordersScreenRoute,
+      discoverScreenRoute,
       cartScreenRoute,
-      paymentMethodScreenRoute,
+      paymentScreenRoute,
       addressesScreenRoute,
-      notificationsScreenRoute,
       chatScreenRoute,
       userInfoScreenRoute,
       editUserInfoScreenRoute,
-      bookmarkScreenRoute,
+
       // Add more restricted routes as needed
     ];
     return restrictedRoutes.contains(route);

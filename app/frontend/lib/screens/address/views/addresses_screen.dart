@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shop/constants.dart';
-import 'package:shop/route/api_service.dart'; // Import ApiService
+import 'package:sevenext/constants.dart';
+import 'package:sevenext/route/api_service.dart'; // Import ApiService
 import 'add_edit_address_screen.dart';
 
 // ──────────────────────────────────────────────────────────────
@@ -10,8 +10,9 @@ class Address {
   final String id;           // addresses.id
   final String userAddressId; // user_addresses.id (the link row)
   final String name;
-  final String street;
+  final String address; // Renamed from street to address
   final String city;
+  final String state; // Added state
   final String postalCode;
   final String country;
   final bool isDefault;
@@ -20,8 +21,9 @@ class Address {
     required this.id,
     required this.userAddressId,
     required this.name,
-    required this.street,
+    required this.address, // Renamed from street to address
     required this.city,
+    required this.state, // Added state
     required this.postalCode,
     required this.country,
     required this.isDefault,
@@ -33,9 +35,10 @@ class Address {
       id: json['id'],
       userAddressId: json['user_address_id'],   // user_addresses.id
       name: json['name'] ?? 'Unnamed',
-      street: json['street'] ?? '',
+      address: json['address'] ?? '', // Changed key from 'street' to 'address' and mapped to new field
       city: json['city'] ?? '',
-      postalCode: json['postal_code'].toString(),
+      state: json['state'] ?? '', // Added state parsing
+      postalCode: json['pincode'].toString(),
       country: json['country'] ?? '',
       isDefault: json['is_default'] == 1 || json['is_default'] == true,
     );
@@ -187,7 +190,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Text("${addr.street}\n${addr.city}, ${addr.country} ${addr.postalCode}"),
+                  Text("${addr.address}\n${addr.city}, ${addr.state}, ${addr.country} ${addr.postalCode}"), // Used new field 'address'
                   const SizedBox(height: defaultPadding),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shop/components/network_image_with_loader.dart';
+import 'package:sevenext/components/network_image_with_loader.dart';
 
 import '../../../../constants.dart';
 
@@ -11,6 +11,7 @@ class ReviewProductInfoCard extends StatelessWidget {
     required this.brand,
   });
   final String image, title, brand;
+
 
   @override
   Widget build(BuildContext context) {

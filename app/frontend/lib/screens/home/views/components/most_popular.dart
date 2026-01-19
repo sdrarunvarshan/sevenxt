@@ -1,8 +1,8 @@
 // lib/screens/home/components/most_popular.dart
 import 'package:flutter/material.dart';
-import 'package:shop/components/product/secondary_product_card.dart';
-import 'package:shop/models/product_model.dart';
-import 'package:shop/route/api_service.dart';
+import 'package:sevenext/components/product/secondary_product_card.dart';
+import 'package:sevenext/models/product_model.dart';
+import 'package:sevenext/route/api_service.dart';
 import '/screens/helpers/user_helper.dart';
 import '../../../../constants.dart';
 import '../../../../route/route_constants.dart';
@@ -147,9 +147,8 @@ class _MostPopularState extends State<MostPopular> {
                     image: mostPopularProducts[index].image,
                     brandName: mostPopularProducts[index].brandName,
                     title: mostPopularProducts[index].title,
-                    price: mostPopularProducts[index].price,
-                    priceAfetDiscount: mostPopularProducts[index].priceAfterDiscount,
-                    dicountpercent: mostPopularProducts[index].discountPercent,
+                    price: mostPopularProducts[index].price.toDouble(),
+                    priceAfetDiscount: mostPopularProducts[index].priceAfetDiscount?.toDouble(),
                     press: () {
                       Navigator.pushNamed(
                         context,

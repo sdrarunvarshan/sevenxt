@@ -1,24 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:shop/components/cart_button.dart';
-import 'package:shop/components/custom_modal_bottom_sheet.dart';
-import 'package:shop/components/product/product_card.dart';
-import 'package:shop/constants.dart';
-import 'package:shop/route/screen_export.dart';
-import '../../../components/network_image_with_loader.dart';
+import 'package:sevenext/components/custom_modal_bottom_sheet.dart';
+import 'package:sevenext/components/product/product_card.dart';
+import 'package:sevenext/constants.dart';
+import 'package:sevenext/route/screen_export.dart';
 import '../../../route/api_service.dart';
-import 'components/notify_me_card.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../../helpers/user_helper.dart';
 import 'components/product_images.dart';
 import 'components/product_info.dart';
 import 'components/product_list_tile.dart';
 import '../../../components/review_card.dart';
-import 'package:shop/models/product_model.dart';
-import 'package:shop/screens/product/views/bookmark_manager.dart';
-import 'package:shop/models/cart_model.dart';
-import 'package:shop/screens/product/views/added_to_cart_message_screen.dart';
-import 'package:shop/screens/product/views/components/product_quantity.dart';
-import 'package:shop/screens/product/views/components/selected_colors.dart';
-import 'package:shop/screens/product/views/components/unit_price.dart';
+import 'package:sevenext/models/product_model.dart';
+import 'package:sevenext/models/cart_model.dart';
+import 'package:sevenext/screens/product/views/added_to_cart_message_screen.dart';
+import 'package:sevenext/screens/product/views/components/product_quantity.dart';
+import 'package:sevenext/screens/product/views/components/selected_colors.dart';
+import 'package:sevenext/screens/product/views/components/unit_price.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   const ProductDetailsScreen({super.key, this.product, this.userType});
@@ -33,50 +31,80 @@ class ProductDetailsScreen extends StatefulWidget {
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   int _quantity = 1;
   int _selectedColorIndex = 0;
-  Color? _selectedColor;
   List<dynamic> _productReviews = [];
   bool _isLoadingReviews = true;
+  ProductModel? _fullProduct;
+  bool _isLoadingProduct = true;
+  late String? _resolvedUserType;
 
-  final List<Color> _availableColors = const [
-    Color(0xFFEA6262),
-    Color(0xFFB1CC63),
-    Color(0xFFFFBF5F),
-    Color(0xFF9FE1DD),
-    Color(0xFFC482DB),
-  ];
+
+
 
   @override
   void initState() {
     super.initState();
-    _selectedColor = _availableColors.first;
+    _selectedColorIndex =
+    (widget.product != null && widget.product!.colors.isNotEmpty) ? 0 : -1;
+    _resolvedUserType = widget.userType;
+
     _loadProductReviews();
+    _loadProductDetails();
   }
+  final ScrollController _recommendScrollController = ScrollController();
+
 
   Future<void> _loadProductReviews() async {
     if (widget.product == null) {
-      setState(() {
-        _isLoadingReviews = false;
-      });
+      _isLoadingReviews = false;
       return;
     }
 
-    // Simulate loading reviews
-    await Future.delayed(Duration(milliseconds: 500));
+    try {
+      final response = await ApiService()
+          .getProductReviews(widget.product!.id, limit: 5);
 
-    // For now, use mock data
-    setState(() {
-      _productReviews = List.generate(
-          5,
-              (index) => {
-            'id': 'review_$index',
-            'userName': 'User ${index + 1}',
-            'rating': (index % 5) + 1.0,
-            'comment': 'Great product! ${index + 1}',
-            'date': DateTime.now().subtract(Duration(days: index * 10)),
-          });
+      setState(() {
+        _productReviews = response['reviews'] ?? [];
+        _isLoadingReviews = false;
+      });
+    } catch (e) {
+      debugPrint("❌ Failed to load product reviews: $e");
       _isLoadingReviews = false;
-    });
+    }
   }
+  Future<void> _loadProductDetails() async {
+    try {
+      String userType = widget.userType ?? 'b2c';
+
+      // If userType is not passed, fetch it from UserHelper
+      if (widget.userType == null) {
+        userType = await UserHelper.getUserType();
+      }
+
+      // Update the resolved user type so it can be used for recommendations
+      setState(() {
+        _resolvedUserType = userType;
+      });
+
+      // IMPORTANT: always fetch by ID
+      final product = await ApiService().getProductById(
+        widget.product!.id,
+        userType: userType,
+      );
+
+      setState(() {
+        _fullProduct = product;
+        _isLoadingProduct = false;
+      });
+    } catch (e) {
+      debugPrint("❌ Failed to load product details: $e");
+      setState(() {
+        _isLoadingProduct = false;
+      });
+    }
+  }
+
+
 
   void _incrementQuantity() {
     setState(() {
@@ -92,36 +120,27 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
   }
 
+
   void _onColorSelected(int index) {
     setState(() {
       _selectedColorIndex = index;
-      _selectedColor = _availableColors[index];
     });
   }
 
+
   void _addToCart() {
-    final ProductModel currentProduct = widget.product ??
-        ProductModel(
-          image: "https://via.placeholder.com/150",
-          brandName: "Unknown Brand",
-          title: "Product Not Found",
-          price: 0.0,
-          images: [],
-          isAvailable: false,
-          description: "Details for this product are not available.",
-          rating: 0.0,
-          reviews: 0,
-          id: '',
-          discountPercent: 0,
-        );
+    if (_fullProduct == null|| _selectedColorIndex < 0) return;
 
-    final String colorHex = _selectedColor!
-        .toARGB32()
-        .toRadixString(16)
-        .padLeft(8, '0')
-        .toUpperCase();
+    final String selectedColorName =
+    _fullProduct!.colors[_selectedColorIndex];
 
-    Cart().addItem(currentProduct, colorHex);
+
+    Cart().addItem(_fullProduct!, selectedColorName, quantity: _quantity,
+      weightKg: _fullProduct!.weightKg,
+      hsnCode: _fullProduct!.hsnCode,
+      lengthCm: _fullProduct!.lengthCm,
+      breadthCm: _fullProduct!.breadthCm,
+      heightCm: _fullProduct!.heightCm,);
 
     customModalBottomSheet(
       context,
@@ -130,31 +149,23 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
+
   void _buyNow() {
-    final ProductModel currentProduct = widget.product ??
-        ProductModel(
-          image: "https://via.placeholder.com/150",
-          brandName: "Unknown Brand",
-          title: "Product Not Found",
-          price: 0.0,
-          images: [],
-          isAvailable: false,
-          description: "Details for this product are not available.",
-          rating: 0.0,
-          reviews: 0,
-          id: '',
-          discountPercent: 0,
-        );
+    if (_fullProduct == null || _selectedColorIndex < 0) return;
 
-    final String colorHex = _selectedColor!
-        .toARGB32()
-        .toRadixString(16)
-        .padLeft(8, '0')
-        .toUpperCase();
+    final String selectedColorName =
+    _fullProduct!.colors[_selectedColorIndex];
 
-    Cart().addItem(currentProduct, colorHex);
 
-    Navigator.pushNamed(context, cartScreenRoute);
+    Cart().addItem(_fullProduct!, selectedColorName, quantity: _quantity,hsnCode: _fullProduct!.hsnCode,
+      weightKg: _fullProduct!.weightKg,
+      lengthCm: _fullProduct!.lengthCm,
+      breadthCm: _fullProduct!.breadthCm,
+      heightCm: _fullProduct!.heightCm,    );
+
+    Navigator.pushNamed(context, cartScreenRoute,arguments: {
+      'userType': _resolvedUserType, // ✅ PASS IT
+    });
   }
 
   Map<String, int> _calculateReviewStats() {
@@ -237,20 +248,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           ],
         ),
       );
-    } else if (widget.product != null && !currentProduct.isAvailable) {
-      return NotifyMeCard(
-        isNotify: false,
-        onChanged: (value) {
-          if (value) {
-            print("Subscribed to notifications for ${currentProduct.title}");
-          }
-        },
-      );
-    } else {
+    }  else {
       return Container(
         padding: const EdgeInsets.all(defaultPadding),
         child: Text(
-          "Product information not available",
+          "Product not available",
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium,
         ),
@@ -260,20 +262,24 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ProductModel currentProduct = widget.product ??
-        ProductModel(
-          image: "https://via.placeholder.com/150",
-          brandName: "Unknown Brand",
-          title: "Product Not Found",
-          price: 0.0,
-          images: [],
-          isAvailable: false,
-          description: "Details for this product are not available.",
-          rating: 0.0,
-          reviews: 0,
-          id: '',
-          discountPercent: 0,
-        );
+
+    if (_isLoadingProduct) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: kPrimaryColor),
+        ),
+      );
+    }
+
+    // ✅ REQUIRED: null protection
+    if (_fullProduct == null) {
+      return const Scaffold(
+        body: Center(child: Text("Product not found")),
+      );
+    }
+    // ✅ THIS LINE FIXES THE ERROR (DO NOT REMOVE)
+    final ProductModel currentProduct = _fullProduct!;
+
 
     final List<String> imagesToShow =
     (currentProduct.images != null && currentProduct.images!.isNotEmpty)
@@ -301,25 +307,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               actions: [
-                ValueListenableBuilder<List<ProductModel>>(
-                  valueListenable: BookmarkManager.instance.bookmarkedProducts,
-                  builder: (context, bookmarkedProducts, child) {
-                    final bool isBookmarked =
-                    BookmarkManager.instance.isBookmarked(currentProduct);
-                    return IconButton(
-                      onPressed: () {
-                        BookmarkManager.instance.toggleBookmark(currentProduct);
-                      },
-                      icon: SvgPicture.asset(
-                        "assets/icons/Bookmark.svg",
-                        colorFilter: ColorFilter.mode(
-                          isBookmarked ? kPrimaryColor : whileColor60,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                    );
-                  },
-                ),
+
               ],
             ),
 
@@ -328,14 +316,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
             // Product Info - Already a sliver
             ProductInfo(
-              brand: currentProduct.brandName,
-              title: currentProduct.title,
-              isAvailable: currentProduct.isAvailable,
-              description: currentProduct.description ??
-                  "No description available.",
-              rating: currentProduct.rating,
-              numOfReviews: currentProduct.reviews,
-            ),
+              product: currentProduct,
+            )
+            ,
 
             // Quantity Selector
             SliverPadding(
@@ -346,8 +329,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   children: [
                     Expanded(
                       child: UnitPrice(
-                        price: currentProduct.price,
-                        priceAfterDiscount: currentProduct.priceAfterDiscount,
+                        price: currentProduct.price.toDouble(),
+                        priceAfterDiscount: currentProduct.priceAfetDiscount?.toDouble(),
+                        discountPercent: currentProduct.discountPercentUI,
                       ),
                     ),
                     ProductQuantity(
@@ -363,11 +347,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             // Color Selection
             SliverToBoxAdapter(
               child: SelectedColors(
-                colors: _availableColors,
+                colors: currentProduct.colors, // ✅ List<String>
                 selectedColorIndex: _selectedColorIndex,
                 press: _onColorSelected,
               ),
             ),
+
 
             // Product Details Section
             SliverPadding(
@@ -390,9 +375,28 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 ),
               ),
             ),
-
-            // Reviews Section
             SliverPadding(
+              padding: const EdgeInsets.all(defaultPadding),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Return Policy",
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: defaultPadding / 2),
+                    Text(
+                      currentProduct.returnPolicy ??
+                          "No return policy available.",
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+            )
+            // Reviews Section
+            ,SliverPadding(
               padding: const EdgeInsets.all(defaultPadding),
               sliver: SliverToBoxAdapter(
                 child: _isLoadingReviews
@@ -406,8 +410,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         .bodyLarge!
                         .color!
                         .withOpacity(0.035),
-                    borderRadius:
-                    BorderRadius.circular(defaultBorderRadious),
+                    borderRadius: BorderRadius.circular(defaultBorderRadious),
                   ),
                   child: Column(
                     children: [
@@ -420,9 +423,25 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         "Be the first to review this product!",
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
+                      const SizedBox(height: 12),
+
+                      /// 🔥 WRITE REVIEW BUTTON
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pushNamed(
+                            context,
+                            productReviewsScreenRoute,
+                            arguments: {
+                              'product': currentProduct,
+                            },
+                          );
+                        },
+                        child: const Text("Write a Review"),
+                      ),
                     ],
                   ),
                 )
+
                     : ReviewCard(
                   rating: currentProduct.rating,
                   numOfReviews: totalReviews,
@@ -446,32 +465,15 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     context,
                     productReviewsScreenRoute,
                     arguments: {
-                      'productId': currentProduct.id,
+                      'product': currentProduct,
                       'reviews': _productReviews,
+                      '_selectedColorIndex': _selectedColorIndex,
                     },
                   );
                 },
               ),
 
             // Write a Review - ProductListTile is already a sliver
-            ProductListTile(
-              svgSrc: "assets/icons/Edit.svg",
-              title: "Write a Review",
-              press: () {
-                Navigator.pushNamed(
-                  context,
-                  addReviewsScreenRoute,
-                  arguments: {
-                    'product': currentProduct,
-                  },
-                ).then((value) {
-                  if (value == true) {
-                    _loadProductReviews();
-                  }
-                });
-              },
-            ),
-
             // You may also like Section
             SliverPadding(
               padding: const EdgeInsets.all(defaultPadding),
@@ -497,7 +499,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         future: widget.product != null
                             ? ApiService().getRecommendedProducts(
                           widget.product!.id,
-                          widget.userType ?? 'b2c',
+                          _resolvedUserType ?? 'b2c',
                           limit: 10,
                         )
                             : Future.value([]),
@@ -547,35 +549,93 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             );
                           }
 
+
+
                           final recommendedProducts = snapshot.data!;
-                          return ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            physics: const BouncingScrollPhysics(),
-                            itemCount: recommendedProducts.length,
-                            separatorBuilder: (context, index) =>
-                            const SizedBox(width: defaultPadding),
-                            itemBuilder: (context, index) {
-                              final p = recommendedProducts[index];
-                              return SizedBox(
-                                width: 150,
-                                child: ProductCard(
-                                  image: p.image,
-                                  title: p.title,
-                                  brandName: p.brandName,
-                                  price: p.price,
-                                  priceAfetDiscount: p.priceAfterDiscount,
-                                  dicountpercent: p.discountPercent,
-                                  press: () {
-                                    Navigator.pushNamed(
-                                      context,
-                                      productDetailsScreenRoute,
-                                      arguments: p,
+
+                          return SizedBox(
+                            height: 260, // adjust based on ProductCard height
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+
+                                // 🔹 Product List
+                                ListView.separated(
+                                  controller: _recommendScrollController,
+                                  scrollDirection: Axis.horizontal,
+                                  physics: const BouncingScrollPhysics(),
+                                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                                  itemCount: recommendedProducts.length,
+                                  separatorBuilder: (context, index) =>
+                                  const SizedBox(width: defaultPadding),
+                                  itemBuilder: (context, index) {
+                                    final p = recommendedProducts[index];
+                                    return SizedBox(
+                                      width: 150,
+                                      child: ProductCard(
+                                        image: p.image,
+                                        title: p.title,
+                                        brandName: p.brandName,
+                                        price: p.price.toDouble(),
+                                        priceAfetDiscount: p.priceAfetDiscount?.toDouble(),
+                                        dicountpercent: p.discountPercentUI,
+                                        rating: p.rating,
+                                        reviews: p.reviews,
+                                        press: () {
+                                          Navigator.pushNamed(
+                                            context,
+                                            productDetailsScreenRoute,
+                                            arguments: p,
+                                          );
+                                        },
+                                      ),
                                     );
                                   },
                                 ),
-                              );
-                            },
+
+                                // 🔹 Left Arrow
+                                Positioned(
+                                  left: 8,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      _recommendScrollController.animateTo(
+                                        _recommendScrollController.offset - 200, // scroll left
+                                        duration: const Duration(milliseconds: 300),
+                                        curve: Curves.easeOut,
+                                      );
+                                    },
+                                    child: SvgPicture.asset(
+                                      "assets/icons/miniLeft.svg",
+                                      height: 28,
+                                      width: 28,
+                                    ),
+                                  ),
+                                ),
+
+
+                                // 🔹 Right Arrow
+                                Positioned(
+                                  right: 8,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      _recommendScrollController.animateTo(
+                                        _recommendScrollController.offset + 200, // scroll right
+                                        duration: const Duration(milliseconds: 300),
+                                        curve: Curves.easeOut,
+                                      );
+                                    },
+                                    child: SvgPicture.asset(
+                                      "assets/icons/miniRight.svg",
+                                      height: 28,
+                                      width: 28,
+                                    ),
+                                  ),
+                                ),
+
+                              ],
+                            ),
                           );
+
                         },
                       ),
                     ),

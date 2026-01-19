@@ -10,7 +10,9 @@ class SelectedColors extends StatelessWidget {
     required this.selectedColorIndex,
     required this.press,
   });
-  final List<Color> colors;
+
+  // 👇 BACKEND colors (e.g. ["black", "white", "blue"])
+  final List<String> colors;
   final int selectedColorIndex;
   final ValueChanged<int> press;
 
@@ -31,19 +33,59 @@ class SelectedColors extends StatelessWidget {
           child: Row(
             children: List.generate(
               colors.length,
-              (index) => Padding(
-                padding: EdgeInsets.only(
-                    left: index == 0 ? defaultPadding : defaultPadding / 2),
-                child: ColorDot(
-                  color: colors[index],
-                  isActive: selectedColorIndex == index,
-                  press: () => press(index),
-                ),
-              ),
+                  (index) {
+                final Color color =
+                mapColorNameToColor(colors[index]);
+
+                // ❌ skip unknown colors
+                if (color == Colors.transparent) {
+                  return const SizedBox.shrink();
+                }
+
+                return Padding(
+                  padding: EdgeInsets.only(
+                    left: index == 0
+                        ? defaultPadding
+                        : defaultPadding / 2,
+                  ),
+                  child: ColorDot(
+                    color: color,
+                    isActive: selectedColorIndex == index,
+                    press: () => press(index),
+                  ),
+                );
+              },
             ),
           ),
-        )
+        ),
       ],
     );
+  }
+}
+
+/// ✅ KEEP mapper in SAME FILE
+Color mapColorNameToColor(String color) {
+  switch (color.toLowerCase()) {
+    case 'black':
+      return Colors.black;
+    case 'white':
+      return Colors.white;
+    case 'blue':
+      return Colors.blue;
+    case 'green':
+      return Colors.green;
+    case 'red':
+      return Colors.red;
+    case 'yellow':
+      return Colors.yellow;
+    case 'purple':
+      return Colors.purple;
+    case 'orange':
+      return Colors.orange;
+    case 'grey':
+    case 'gray':
+      return Colors.grey;
+    default:
+      return Colors.transparent;
   }
 }

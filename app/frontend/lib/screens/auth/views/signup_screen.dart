@@ -1,8 +1,8 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:shop/screens/auth/views/components/user_sign_up_form.dart';
-import 'package:shop/screens/auth/views/components/b2b_sign_up_form.dart';
-import 'package:shop/route/route_constants.dart';
+import 'package:sevenext/screens/auth/views/components/user_sign_up_form.dart';
+import 'package:sevenext/screens/auth/views/components/b2b_sign_up_form.dart';
+import 'package:sevenext/route/route_constants.dart';
 
 import '../../../constants.dart';
 

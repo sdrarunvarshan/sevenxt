@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shop/screens/home/views/components/categories.dart';
+import 'package:sevenext/screens/home/views/components/categories.dart';
 import '../../../../constants.dart';
 import 'offers_carousel.dart';
 

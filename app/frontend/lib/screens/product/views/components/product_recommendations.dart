@@ -62,7 +62,7 @@ class _ProductRecommendationsSimpleState extends State<ProductRecommendationsSim
     if (_isLoading) {
       return const SliverToBoxAdapter(
         child: SizedBox(
-          height: 220,
+          height: 280, // Increased height to prevent overflow
           child: Center(child: CircularProgressIndicator(color: kPrimaryColor)),
         ),
       );
@@ -76,10 +76,10 @@ class _ProductRecommendationsSimpleState extends State<ProductRecommendationsSim
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Failed to load recommendations'),
+                const Text('Failed to load recommendations'),
                 TextButton(
                   onPressed: _fetchRecommendedProducts,
-                  child: Text('Retry'),
+                  child: const Text('Retry'),
                 ),
               ],
             ),
@@ -94,7 +94,7 @@ class _ProductRecommendationsSimpleState extends State<ProductRecommendationsSim
 
     return SliverToBoxAdapter(
       child: SizedBox(
-        height: 220,
+        height: 320, // Increased height to accommodate ProductCard content
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           itemCount: _recommendedProducts.length,
@@ -111,8 +111,11 @@ class _ProductRecommendationsSimpleState extends State<ProductRecommendationsSim
                 title: p.title,
                 brandName: p.brandName,
                 price: p.price,
-                priceAfetDiscount: p.priceAfterDiscount,
-                dicountpercent: p.discountPercent,
+                priceAfetDiscount: p.priceAfetDiscount,
+                rating: p.rating,
+                reviews: p.reviews,
+                dicountpercent: p.discountPercentUI,
+
                 press: () {
                   Navigator.pushReplacementNamed(
                     context,

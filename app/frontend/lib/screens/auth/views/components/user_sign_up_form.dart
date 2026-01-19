@@ -2,15 +2,16 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:provider/provider.dart'; // Added
-import 'package:shop/route/api_service.dart';
-import 'package:shop/route/guest_services.dart'; // Added
-import 'package:shop/screens/auth/views/components/otp_dialog.dart';
-
+import 'package:provider/provider.dart';
+import  'package:sevenext/route/api_service.dart';
+import 'package:sevenext/route/guest_services.dart';
+import 'package:sevenext/screens/auth/views/components/otp_dialog.dart';
 import '../../../../constants.dart';
 import '../../../../route/route_constants.dart';
-import '../../../../route/twilio_service.dart';
 import '../../../helpers/user_helper.dart';
+import 'package:sevenext/models/cart_model.dart';
+
+
 
 class UserSignUpForm extends StatefulWidget {
   const UserSignUpForm({
@@ -30,9 +31,42 @@ class _UserSignUpFormState extends State<UserSignUpForm> {
   late final TextEditingController _fullNameController;
   late final TextEditingController _phoneNumberController;
   late final TextEditingController _addressController;
+
   late final TextEditingController _emailController;
   late final TextEditingController _passwordController;
   bool _agreeToTerms = false;
+  String? _addressValidator(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Address is required';
+    }
+
+    final parts = value.split(',').map((e) => e.trim()).toList();
+
+    if (parts.length != 5) {
+      return 'Enter address as: Street, City, State, Postal Code, Country';
+    }
+
+    final street = parts[0];
+    final city = parts[1];
+    final state = parts[2];
+    final postalCode = parts[3];
+    final country = parts[4];
+
+    if (street.isEmpty ||
+        city.isEmpty ||
+        state.isEmpty ||
+        postalCode.isEmpty ||
+        country.isEmpty) {
+      return 'All address fields are mandatory';
+    }
+
+    if (!RegExp(r'^\d{6}$').hasMatch(postalCode)) {
+      return 'Enter a valid 6-digit postal code';
+    }
+
+    return null;
+  }
+
 
   @override
   void initState() {
@@ -40,6 +74,7 @@ class _UserSignUpFormState extends State<UserSignUpForm> {
     _fullNameController = TextEditingController();
     _phoneNumberController = TextEditingController();
     _addressController = TextEditingController();
+
     _emailController = TextEditingController();
     _passwordController = TextEditingController();
     _agreeToTerms = widget.agreeToTerms;
@@ -65,10 +100,10 @@ class _UserSignUpFormState extends State<UserSignUpForm> {
 
     // 1️⃣ Validate & format phone number
     try {
-      if (!TwilioService.isValidPhoneNumber(rawPhone)) {
+      if (!ApiService.isValidPhoneNumber(rawPhone)) {
         throw Exception("Invalid phone number");
       }
-      phoneNumber = TwilioService.formatPhoneNumber(rawPhone);
+      phoneNumber = ApiService.formatPhoneNumber(rawPhone);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -81,46 +116,66 @@ class _UserSignUpFormState extends State<UserSignUpForm> {
     print("📱 Sending OTP for phone: $phoneNumber");
 
     // 2️⃣ Send OTP
-    final otpResult = await TwilioService.sendVerificationOtp(phoneNumber);
-    if (otpResult['success'] != true) {
+    try {
+      final otpResult = await ApiService.sendVerificationOtp(phoneNumber);
+      
+      // If the API returned a 2xx but has an error message in the body
+      if (otpResult['success'] == false) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(otpResult['message'] ?? "Failed to send OTP")),
+          );
+        }
+        return;
+      }
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(otpResult['message'] ?? "Failed to send OTP"),
-          ),
+          SnackBar(content: Text("Failed to send OTP: $e")),
         );
       }
       return;
     }
 
-    // 3️⃣ Show OTP dialog
-    String? otp = await showDialog<String>(
-      context: context,
-      builder: (context) => OtpDialog(phone: phoneNumber),
-    );
+    // 3️⃣ Show OTP dialog and Verify
+    print("✅ OTP sent successfully, showing dialog...");
+    
+    // Tiny delay to ensure UI is ready
+    await Future.delayed(const Duration(milliseconds: 100));
 
-    if (otp == null || otp.isEmpty) return;
-    print("📱 User entered OTP: $otp");
+    if (!mounted) return;
 
-    // 4️⃣ Verify OTP
-    final verifyResult = await TwilioService.verifyOtp(phoneNumber, otp);
-    print(
-        "📱 Verify OTP Result: ${verifyResult['success']} - ${verifyResult['message']}");
+    String? otp;
 
-    if (verifyResult['success'] != true) {
+    try {
+      otp = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => OtpDialog(
+          phone: phoneNumber,
+          onVerify: (otp) => ApiService.verifyOtp(phoneNumber, otp),
+        ),
+      );
+    } catch (e) {
+      print("Error showing OTP dialog: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(verifyResult['message'] ?? "Invalid OTP"),
-          ),
+          SnackBar(content: Text("Error opening verification dialog")),
         );
       }
+      return;
+    }
+
+    print("Dialog closed with OTP: $otp");
+
+    if (otp == null || otp.isEmpty) {
+      print("❌ OTP verification cancelled or failed");
       return;
     }
 
     print("✅ OTP verified, proceeding with signup...");
 
-    // 5️⃣ Proceed with signup
+    // 4️⃣ Proceed with signup
     await _signUp();
   }
 
@@ -133,19 +188,23 @@ class _UserSignUpFormState extends State<UserSignUpForm> {
       final email = _emailController.text.trim();
       final password = _passwordController.text.trim();
 
-      String street = '';
+      String address = '';
       String city = '';
+      String state = ''; // Added state variable
       String postalCode = '';
       String country = '';
       final bool addressProvided = addressInput.isNotEmpty;
 
+
       if (addressProvided) {
         final parts = addressInput.split(',').map((e) => e.trim()).toList();
-        street = parts.isNotEmpty ? parts[0] : '';
+        address = parts.isNotEmpty ? parts[0] : '';
         city = parts.length > 1 ? parts[1] : '';
-        postalCode = parts.length > 2 ? parts[2] : '';
-        country = parts.length > 3 ? parts[3] : '';
+        state = parts.length > 2 ? parts[2] : ''; // Assuming state is the 3rd part
+        postalCode = parts.length > 3 ? parts[3] : ''; // Assuming postalCode is the 4th part
+        country = parts.length > 4 ? parts[4] : ''; // Assuming country is the 5th part
       }
+
 
       // Create the request body for B2C signup
       final Map<String, dynamic> body = {
@@ -154,9 +213,10 @@ class _UserSignUpFormState extends State<UserSignUpForm> {
         'full_name': fullName,
         'phone_number': phoneNumber,
         'address': addressProvided ? {
-          'street': street,
+          'address': address,
           'city': city,
-          'postal_code': postalCode,
+          'state': state, // Added state
+          'pincode': postalCode,
           'country': country,
           'name': 'Primary Address',
           'is_default': true,
@@ -201,7 +261,14 @@ class _UserSignUpFormState extends State<UserSignUpForm> {
           Provider.of<GuestService>(context, listen: false).setGuestMode(false);
           await UserHelper.setUserType(UserHelper.b2c);
           print('✅ B2C Signup: Set user type to B2C');
+          // 🔥 LOAD USER-SCOPED CART (B2C)
+          final cart = Cart();
+          await cart.loadUserCart(email);
+
+          print('🛒 Cart loaded for B2C user: $email');
+
         }
+
 
         // Handle success
         ScaffoldMessenger.of(context).showSnackBar(
@@ -290,10 +357,11 @@ class _UserSignUpFormState extends State<UserSignUpForm> {
             const SizedBox(height: defaultPadding),
             TextFormField(
               controller: _addressController,
+              validator: _addressValidator,
               textInputAction: TextInputAction.next,
               keyboardType: TextInputType.streetAddress,
               decoration: InputDecoration(
-                hintText: 'Address (Street, City, Postal Code, Country)',
+                hintText: 'Address (Street, City, State, Postal Code, Country)',
                 prefixIcon: Padding(
                   padding:
                   const EdgeInsets.symmetric(vertical: defaultPadding * 0.75),
@@ -398,8 +466,23 @@ class _UserSignUpFormState extends State<UserSignUpForm> {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        const TextSpan(
-                          text: "& privacy policy.",
+                        TextSpan(
+                          text: "& ",
+                          style: TextStyle(
+                            color: Theme.of(context).textTheme.bodyMedium!.color,
+                          ),
+                        ),
+                         TextSpan(
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () {
+                              Navigator.pushNamed(
+                                  context, privacyPolicyScreenRoute);
+                            },
+                          text: " privacy policy.",
+                             style: const TextStyle(
+                               color: kPrimaryColor,
+                               fontWeight: FontWeight.w500,
+                             )
                         ),
                       ],
                     ),

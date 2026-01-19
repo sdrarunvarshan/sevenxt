@@ -2,33 +2,38 @@ import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import 'package:shop/constants.dart';
-import 'package:shop/route/guest_services.dart';
-import 'package:shop/route/route_constants.dart';
-import 'package:shop/screens/bookmark/views/bookmark_screen.dart';
-import 'package:shop/screens/checkout/views/cart_screen.dart';
-import 'package:shop/screens/discover/views/discover_screen.dart';
-import 'package:shop/screens/profile/views/profile_screen.dart';
-import 'package:shop/screens/address/views/addresses_screen.dart';
-import 'package:shop/screens/home/views/home_screen.dart';
-import 'package:shop/screens/onbording/views/onbording_screnn.dart';
+import 'package:sevenext/constants.dart';
+import 'package:sevenext/route/guest_services.dart';
+import 'package:sevenext/route/route_constants.dart';
+import 'package:sevenext/screens/checkout/views/cart_screen.dart';
+import 'package:sevenext/screens/discover/views/discover_screen.dart';import 'package:sevenext/screens/profile/views/profile_screen.dart';import 'package:sevenext/screens/address/views/addresses_screen.dart';import 'package:sevenext/screens/home/views/home_screen.dart';import 'package:sevenext/screens/onbording/views/onbording_screnn.dart';
 
 class EntryPoint extends StatefulWidget {
-  const EntryPoint({super.key});
+  // Add an optional initial index parameter
+  final int initialIndex;
+
+  const EntryPoint({super.key, this.initialIndex = 0}); // Default to 0 (HomeScreen)
 
   @override
   State<EntryPoint> createState() => _EntryPointState();
 }
 
 class _EntryPointState extends State<EntryPoint> {
+  late int _currentIndex; // Use late initialization
+
   final List<Widget> _pages = const [
     HomeScreen(),
     DiscoverScreen(),
-    BookmarkScreen(),
     CartScreen(),
     ProfileScreen(),
   ];
-  int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize _currentIndex with the value from the widget's constructor
+    _currentIndex = widget.initialIndex;
+  }
 
   // Helper function for SVG icons
   SvgPicture svgIcon(String src, {Color? color}) {
@@ -52,9 +57,9 @@ class _EntryPointState extends State<EntryPoint> {
         final bool isGuest = guestService.isGuest;
 
         // Define restricted indices
-        const int bookmarkIndex = 2;
-        const int cartIndex = 3;
-        const int profileIndex = 4;
+        const int discoverIndex = 1;
+        const int cartIndex = 2;
+        const int profileIndex = 3;
 
         return Scaffold(
           appBar: AppBar(
@@ -81,23 +86,7 @@ class _EntryPointState extends State<EntryPoint> {
                   ),
                 ),
               ),
-              IconButton(
-                onPressed: () {
-                  if (isGuest) {
-                    Navigator.pushNamed(context, logInScreenRoute);
-                  } else {
-                    Navigator.pushNamed(context, notificationsScreenRoute);
-                  }
-                },
-                icon: SvgPicture.asset(
-                  "assets/icons/Notification.svg",
-                  height: 24,
-                  colorFilter: ColorFilter.mode(
-                    isGuest ? Colors.grey : Theme.of(context).textTheme.bodyLarge!.color!,
-                    BlendMode.srcIn,
-                  ),
-                ),
-              ),
+
             ],
           ),
           body: PageTransitionSwitcher(
@@ -120,7 +109,7 @@ class _EntryPointState extends State<EntryPoint> {
               currentIndex: _currentIndex,
               onTap: (index) {
                 // Handle restricted tabs for guests
-                if (isGuest && (index == bookmarkIndex || index == cartIndex || index == profileIndex)) {
+                if (isGuest && ( index == discoverIndex || index == cartIndex || index == profileIndex)) {
                   // Redirect guests to login
                   Navigator.pushNamed(context, logInScreenRoute);
                 } else if (index == cartIndex) {
@@ -152,18 +141,13 @@ class _EntryPointState extends State<EntryPoint> {
                   label: "Shop",
                 ),
                 BottomNavigationBarItem(
-                  icon: svgIcon("assets/icons/Category.svg"),
+                  icon: svgIcon("assets/icons/Category.svg", color: isGuest ? Colors.grey : null),
                   activeIcon: svgIcon("assets/icons/Category.svg", color: kPrimaryColor),
                   label: "Discover",
                 ),
                 BottomNavigationBarItem(
-                  icon: svgIcon("assets/icons/Bookmark.svg", color: isGuest ? Colors.grey : null),
-                  activeIcon: svgIcon("assets/icons/Bookmark.svg", color: isGuest ? Colors.grey : kPrimaryColor),
-                  label: "Bookmark",
-                ),
-                BottomNavigationBarItem(
-                  icon: svgIcon("assets/icons/tv.svg", color: isGuest ? Colors.grey : null),
-                  activeIcon: svgIcon("assets/icons/tv.svg", color: isGuest ? Colors.grey : kPrimaryColor),
+                  icon: svgIcon("assets/icons/cart.svg", color: isGuest ? Colors.grey : null),
+                  activeIcon: svgIcon("assets/icons/cart.svg", color: isGuest ? Colors.grey : kPrimaryColor),
                   label: "Cart",
                 ),
                 BottomNavigationBarItem(

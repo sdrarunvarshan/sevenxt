@@ -1,8 +1,8 @@
 // lib/screens/home/components/best_sellers.dart
 import 'package:flutter/material.dart';
-import 'package:shop/components/product/product_card.dart';
-import 'package:shop/models/product_model.dart';
-import 'package:shop/route/api_service.dart';
+import 'package:sevenext/components/product/product_card.dart';
+import 'package:sevenext/models/product_model.dart';
+import 'package:sevenext/route/api_service.dart';
 import '/screens/helpers/user_helper.dart';
 import '../../../../constants.dart';
 import '../../../../route/route_constants.dart';
@@ -140,9 +140,10 @@ class _BestSellersState extends State<BestSellers> {
                     image: wearables[index].image,
                     brandName: wearables[index].brandName,
                     title: wearables[index].title,
-                    price: wearables[index].price,
-                    priceAfetDiscount: wearables[index].priceAfterDiscount,
-                    dicountpercent: wearables[index].discountPercent,
+                    price: wearables[index].price.toDouble(),
+                    priceAfetDiscount: wearables[index].priceAfetDiscount?.toDouble(),
+                    rating: wearables[index].rating,
+                    reviews: wearables[index].reviews,
                     press: () {
                       Navigator.pushNamed(
                         context,

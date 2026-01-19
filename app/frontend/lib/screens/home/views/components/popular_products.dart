@@ -1,9 +1,9 @@
 // lib/screens/home/components/popular_products.dart
 import 'package:flutter/material.dart';
-import 'package:shop/components/product/product_card.dart';
-import 'package:shop/models/product_model.dart';
-import 'package:shop/route/screen_export.dart';
-import 'package:shop/route/api_service.dart';
+import 'package:sevenext/components/product/product_card.dart';
+import 'package:sevenext/models/product_model.dart';
+import 'package:sevenext/route/screen_export.dart';
+import 'package:sevenext/route/api_service.dart';
 import '/screens/helpers/user_helper.dart';
 import '../../../../constants.dart';
 import '../../../../route/route_constants.dart'; // Import route_constants.dart for productDetailsScreenRoute
@@ -139,9 +139,10 @@ class _PopularProductsState extends State<PopularProducts> {
                     image: products[index].image,
                     brandName: products[index].brandName,
                     title: products[index].title,
-                    price: products[index].price,
-                    priceAfetDiscount: products[index].priceAfterDiscount,
-                    dicountpercent: products[index].discountPercent,
+                    price: products[index].price.toDouble(),
+                    priceAfetDiscount: products[index].priceAfetDiscount?.toDouble(),
+                    rating: products[index].rating,
+                    reviews: products[index].reviews,
                     press: () {
                       Navigator.pushNamed(
                         context,

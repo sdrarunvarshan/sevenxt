@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shop/constants.dart';
-import 'package:shop/screens/home/views/components/category_section.dart';
+import 'package:sevenext/constants.dart';
+import 'package:sevenext/screens/home/views/components/category_section.dart';
 import '../../../models/category_model.dart';
 import 'components/offer_carousel_and_categories.dart';
 

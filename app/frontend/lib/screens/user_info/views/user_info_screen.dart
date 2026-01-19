@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:shop/route/api_service.dart';
-import 'package:shop/route/guest_services.dart';
-import 'package:shop/constants.dart';
+import 'package:sevenext/route/api_service.dart';
+import 'package:sevenext/route/guest_services.dart';
+import 'package:sevenext/constants.dart';
 import '../../auth/views/login_screen.dart';
 import '/route/screen_export.dart';
 

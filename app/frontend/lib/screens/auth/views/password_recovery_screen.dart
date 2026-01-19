@@ -2,10 +2,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:shop/constants.dart';
-import 'package:shop/route/api_service.dart';
-import 'package:shop/route/route_constants.dart';
-import 'package:shop/route/twilio_service.dart';
+import 'package:sevenext/constants.dart';
+import 'package:sevenext/route/api_service.dart';
+import 'package:sevenext/route/route_constants.dart';
+import 'package:sevenext/screens/auth/views/components/otp_dialog.dart';
 
 class PasswordRecoveryScreen extends StatefulWidget {
   const PasswordRecoveryScreen({super.key});
@@ -20,19 +20,18 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
   final TextEditingController _otpController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
 
   bool _isSendingOtp = false;
-  bool _isVerifyingOtp = false;
   bool _isResetting = false;
-  bool _phoneVerified = false;
   bool _showPassword = false;
-  String? _verificationToken;
 
-  // Step tracking: 1=Phone, 2=OTP, 3=New Password
+  // Step tracking: 1=Phone, 3=New Password (Step 2 is now handled by OtpDialog)
   int _currentStep = 1;
 
   @override
   void dispose() {
+    _emailController.dispose();
     _phoneController.dispose();
     _otpController.dispose();
     _newPasswordController.dispose();
@@ -46,90 +45,65 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
     setState(() => _isSendingOtp = true);
 
     try {
-      // Call backend to send OTP
-      final response = await ApiService.post(
-          '/auth/forgot-password/request',
-          body: {'phone': _phoneController.text.trim()}
-      );
+      final phone = _phoneController.text.trim();
+      // Call backend to send OTP using the dedicated method
+      final response = await ApiService.requestPasswordReset(phone);
 
-      if (response['success'] == true) {
-        setState(() => _currentStep = 2); // Move to OTP step
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('OTP sent to ${_phoneController.text}'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message'] ?? 'Failed to send OTP'),
-            backgroundColor: Colors.red,
-          ),
-        );
+      if (response['success'] == false) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['message'] ?? 'Failed to send OTP'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
+
+      if (!mounted) return;
+
+      // Show OTP dialog to verify the code
+      print("✅ OTP sent successfully, showing dialog...");
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      if (!mounted) return;
+
+      String? otp = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => OtpDialog(
+          phone: phone,
+          onVerify: (otp) => ApiService.verifyPasswordResetOtp(phone, otp),
         ),
       );
-    } finally {
-      setState(() => _isSendingOtp = false);
-    }
-  }
 
-  Future<void> _verifyOtp() async {
-    if (_otpController.text.isEmpty || _otpController.text.length != 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter 6-digit OTP')),
-      );
-      return;
-    }
-
-    setState(() => _isVerifyingOtp = true);
-
-    try {
-      final response = await ApiService.post(
-          '/auth/verify-reset-otp',
-          body: {
-            'phone': _phoneController.text.trim(),
-            'otp': _otpController.text.trim()
-          }
-      );
-
-      if (response['success'] == true) {
-        _verificationToken = response['verification_token'];
+      if (otp != null) {
         setState(() {
-          _phoneVerified = true;
-          _currentStep = 3; // Move to password reset step
+          _otpController.text = otp;
+          _currentStep = 3; // Move to New Password step
         });
 
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Phone verified successfully. Please set your new password.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Phone verified successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message'] ?? 'Invalid OTP'),
+            content: Text('Error: $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Verification failed: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     } finally {
-      setState(() => _isVerifyingOtp = false);
+      if (mounted) setState(() => _isSendingOtp = false);
     }
   }
 
@@ -146,87 +120,43 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
     setState(() => _isResetting = true);
 
     try {
-      final response = await ApiService.post(
-          '/auth/reset-password',
-          body: {
-            'phone': _phoneController.text.trim(),
-            'otp': _otpController.text.trim(),
-            'new_password': _newPasswordController.text,
-            'verification_token': _verificationToken,
-          }
+      final response = await ApiService.resetPasswordWithOtp(
+        email: _emailController.text.trim(),
+        phone: _phoneController.text.trim(),
+        otp: _otpController.text.trim(),
+        newPassword: _newPasswordController.text,
       );
 
-      if (response['success'] == true) {
-        // Clear any stored tokens (force re-login)
-        final authBox = Hive.box('auth');
-        await authBox.clear();
-        ApiService.token = null;
+      final authBox = Hive.box('auth');
+      await authBox.clear();
+      ApiService.token = null;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Password reset successful! Please login with new password'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-
-        // Navigate back to login
-        if (mounted) {
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            logInScreenRoute,
-                (route) => false,
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message'] ?? 'Reset failed'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Reset failed: $e'),
-          backgroundColor: Colors.red,
+        const SnackBar(
+          content: Text('Password reset successful. Please login again.'),
+          backgroundColor: Colors.green,
         ),
       );
-    } finally {
-      setState(() => _isResetting = false);
-    }
-  }
 
-  void _resendOtp() async {
-    setState(() => _isSendingOtp = true);
-
-    try {
-      final response = await ApiService.post(
-          '/auth/resend-reset-otp',
-          body: {'phone': _phoneController.text.trim()}
-      );
-
-      if (response['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('New OTP sent to ${_phoneController.text}'),
-            backgroundColor: Colors.green,
-          ),
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          logInScreenRoute,
+              (_) => false,
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to resend: $e')),
+        SnackBar(content: Text(e.toString())),
       );
     } finally {
-      setState(() => _isSendingOtp = false);
+      if (mounted) setState(() => _isResetting = false);
     }
   }
 
   void _goBack() {
     if (_currentStep > 1) {
-      setState(() => _currentStep--);
+      setState(() => _currentStep = 1);
     } else {
       Navigator.pop(context);
     }
@@ -253,7 +183,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                 // Header
                 Center(
                   child: SvgPicture.asset(
-                    "assets/logo/Shoplon.svg",
+                    "assets/logo/sevenextlon.svg",
                     height: 80,
                   ),
                 ),
@@ -275,10 +205,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                 // Step 1: Phone Input
                 if (_currentStep == 1) _buildPhoneStep(),
 
-                // Step 2: OTP Verification
-                if (_currentStep == 2) _buildOtpStep(),
-
-                // Step 3: New Password
+                // Step 3: New Password (Step 2 OTP is now a dialog)
                 if (_currentStep == 3) _buildPasswordStep(),
               ],
             ),
@@ -296,9 +223,9 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
         Container(
           height: 2,
           width: 40,
-          color: _currentStep >= 2 ? kPrimaryColor : Colors.grey.shade300,
+          color: _currentStep >= 3 ? kPrimaryColor : Colors.grey.shade300,
         ),
-        _buildStepCircle(2, 'Verify', _currentStep >= 2),
+        _buildStepCircle(2, 'Verify', _currentStep >= 3),
         Container(
           height: 2,
           width: 40,
@@ -390,86 +317,6 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
     );
   }
 
-  Widget _buildOtpStep() {
-    return Column(
-      children: [
-        // Phone display
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.phone, color: kPrimaryColor, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                _phoneController.text,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const Spacer(),
-              TextButton(
-                onPressed: _currentStep == 1 ? null : () => setState(() => _currentStep = 1),
-                child: const Text('Change'),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: defaultPadding),
-        // OTP Input
-        TextFormField(
-          controller: _otpController,
-          keyboardType: TextInputType.number,
-          maxLength: 6,
-          textInputAction: TextInputAction.done,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.white,
-            hintText: 'Enter 6-digit code',
-            prefixIcon: const Icon(Icons.lock_clock),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            counterText: '',
-          ),
-        ),
-        const SizedBox(height: 8),
-        // Resend OTP
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            TextButton(
-              onPressed: _isSendingOtp ? null : _resendOtp,
-              child: _isSendingOtp
-                  ? const SizedBox(
-                height: 16,
-                width: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-                  : const Text('Resend Code'),
-            ),
-          ],
-        ),
-        const SizedBox(height: defaultPadding),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _isVerifyingOtp ? null : _verifyOtp,
-            child: _isVerifyingOtp
-                ? const SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            )
-                : const Text('Verify Code'),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildPasswordStep() {
     return Column(
       children: [
@@ -495,19 +342,26 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
           ),
         ),
         const SizedBox(height: defaultPadding),
+        TextFormField(
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          validator: emaildValidator,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            hintText: 'Registered email address',
+            prefixIcon: const Icon(Icons.email_outlined),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        const SizedBox(height: defaultPadding),
         // New Password
         TextFormField(
           controller: _newPasswordController,
           obscureText: !_showPassword,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Enter new password';
-            }
-            if (value.length < 6) {
-              return 'Minimum 6 characters';
-            }
-            return null;
-          },
+          validator: passwordValidator,
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
@@ -521,19 +375,12 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
           ),
         ),
         const SizedBox(height: defaultPadding),
+
         // Confirm Password
         TextFormField(
           controller: _confirmPasswordController,
           obscureText: !_showPassword,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Confirm your password';
-            }
-            if (value != _newPasswordController.text) {
-              return 'Passwords do not match';
-            }
-            return null;
-          },
+          validator: passwordValidator,
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,

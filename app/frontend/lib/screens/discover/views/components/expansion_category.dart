@@ -1,55 +1,106 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:sevenext/constants.dart';
 
 class ExpansionCategory extends StatelessWidget {
   const ExpansionCategory({
     super.key,
     required this.title,
     required this.svgSrc,
+    this.image,
     this.onCategoryTap,
   });
 
   final String title, svgSrc;
+  final String? image;
   final VoidCallback? onCategoryTap;
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: Theme.of(context).copyWith(
-        dividerColor: Colors.transparent,
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: defaultPadding,
+        vertical: defaultPadding / 2,
       ),
-      child: ListTile(
-        // Completely remove trailing
-        // Adjust visual density to reduce space
-        visualDensity: VisualDensity.compact,
-        contentPadding: EdgeInsets.zero,
-        // Remove any default padding
+      child: GestureDetector(
+        onTap: onCategoryTap,
+        child: AspectRatio(
+          aspectRatio: 2.5,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(defaultBorderRadious),
+            child: Stack(
+              children: [
+                // Background Image
+                if (image != null && image!.isNotEmpty)
+                  Positioned.fill(
+                    child: CachedNetworkImage(
+                      imageUrl: image!,
+                      fit: BoxFit.cover,
+                      httpHeaders: const {
+                        'User-Agent': 'Mozilla/5.0',
+                      },
+                      errorWidget: (_, __, ___) => const Icon(
+                        Icons.broken_image,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
 
-        // Main category tap handler - call the provided callback
-        // Keep your existing code...
-        iconColor: Theme.of(context).textTheme.bodyLarge!.color,
-        leading: SvgPicture.asset(
-          svgSrc,
-          height: 24,
-          width: 24,
-          colorFilter: ColorFilter.mode(
-            Theme.of(context).iconTheme.color!,
-            BlendMode.srcIn,
+                // Gradient Overlay
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          Colors.black.withOpacity(0.7),
+                          Colors.black.withOpacity(0.1),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Content (Icon + Title) — ONLY ONCE
+                Positioned.fill(
+                  child: Padding(
+                    padding: const EdgeInsets.all(defaultPadding),
+                    child: Row(
+                      children: [
+                        SvgPicture.asset(
+                          svgSrc,
+                          height: 24,
+                          width: 24,
+                          colorFilter: const ColorFilter.mode(
+                            Colors.white,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                        const SizedBox(width: defaultPadding / 2),
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        title: GestureDetector(
-          onTap: onCategoryTap, // Also allow tap on the title directly
-          child: Text(
-            title,
-            style: const TextStyle(fontSize: 14),
-          ),
-        ),
-        textColor: Theme.of(context).textTheme.bodyLarge!.color,
-
-        // REMOVE THE ENTIRE CHILDREN PROPERTY - This is the fix!
-        // Since you don't have subcategories, don't include children at all
       ),
     );
   }
 }
+

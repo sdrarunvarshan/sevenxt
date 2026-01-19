@@ -8,14 +8,14 @@ class NetworkImageWithLoader extends StatelessWidget {
   final BoxFit fit;
   final String imageUrl;
   final double radius;
-  final double width;
-  final double height;
+  final double? width;
+  final double? height;
 
   const NetworkImageWithLoader({
     super.key,
     required this.imageUrl,
-    required this.width,
-    required this.height,
+    this.width,
+    this.height,
     this.fit = BoxFit.cover,
     this.radius = defaultPadding,
   });
@@ -26,11 +26,13 @@ class NetworkImageWithLoader extends StatelessWidget {
       borderRadius: BorderRadius.circular(radius),
       child: CachedNetworkImage(
         imageUrl: imageUrl,
-        width: width,
-        height: height,
-        fit: fit,
-        placeholder: (context, url) => const Skeleton(),
-        errorWidget: (context, url, error) => const Icon(Icons.error),
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.cover,
+        placeholder: (context, url) => const Skeleton(), // Must match the ProductCard's AspectRatio
+        errorWidget: (context, url, error) => const Center(
+          child: Icon(Icons.error, color: Colors.red),
+        ),
       ),
     );
   }

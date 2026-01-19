@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../constants.dart';
 import '../network_image_with_loader.dart';
 
@@ -12,122 +11,108 @@ class ProductCard extends StatelessWidget {
     required this.price,
     this.priceAfetDiscount,
     this.dicountpercent,
+    required this.rating,
+    required this.reviews,
     required this.press,
   });
+
   final String image, brandName, title;
   final double price;
   final double? priceAfetDiscount;
   final int? dicountpercent;
+  final double rating;
+  final int reviews;
   final VoidCallback press;
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: press,
-      style: OutlinedButton.styleFrom(
-          minimumSize: const Size(140, 220),
-          maximumSize: const Size(140, 220),
-          padding: const EdgeInsets.all(8)),
-      child: Column(
-        children: [
-          AspectRatio(
-            aspectRatio: 1.15,
-            child: Stack(
-              children: [
-                NetworkImageWithLoader(
-                  imageUrl: image,
-                  width: 150,        // adjust based on your layout
-                  height: 150,
-                  radius: defaultBorderRadious,
-                ),
-                if (dicountpercent != null)
-                  Positioned(
-                    right: defaultPadding / 2,
-                    top: defaultPadding / 2,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: defaultPadding / 2),
-                      height: 16,
-                      decoration: const BoxDecoration(
-                        color: errorColor,
-                        borderRadius: BorderRadius.all(
-                            Radius.circular(defaultBorderRadious)),
-                      ),
-                      child: Text(
-                        "$dicountpercent% off",
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                  )
-              ],
+    return InkWell(
+      borderRadius: BorderRadius.circular(defaultBorderRadious),
+      onTap: press,
+      child: Container(
+        width: 150,
+        height: 260, // ✅ realistic height
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: blackColor20.withValues(),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: defaultPadding / 2, vertical: defaultPadding / 2),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+
+            /// IMAGE (takes remaining space)
+            Expanded(
+              child: NetworkImageWithLoader(
+                imageUrl: image,
+                radius: 0,
+              ),
+            ),
+
+            /// CONTENT (fixed height)
+            Padding(
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    brandName.toUpperCase(),
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium!
-                        .copyWith(fontSize: 10),
-                  ),
-                  const SizedBox(height: defaultPadding / 2),
+                  if (brandName.isNotEmpty)
+                    Text(
+                      brandName.toUpperCase(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+
+                  const SizedBox(height: 4),
+
                   Text(
                     title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall!
-                        .copyWith(fontSize: 14),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
                   ),
-                  const Spacer(),
-                  priceAfetDiscount != null
-                      ? Row(
-                          children: [
-                            Text(
-                              "\u20B9${priceAfetDiscount}",
-                              style: const TextStyle(
-                                color: Color(0xFF31B0D8),
-                                fontWeight: FontWeight.w500,
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(width: defaultPadding / 4),
-                            Text(
-                              "\u20B9${price}",
-                              style: TextStyle(
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium!
-                                    .color,
-                                fontSize: 10,
-                                decoration: TextDecoration.lineThrough,
-                              ),
-                            ),
-                          ],
-                        )
-                      : Text(
-                          "\u20B9${price}",
-                          style: const TextStyle(
-                            color: Color(0xFF31B0D8),
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
-                          ),
-                        ),
+
+                  const SizedBox(height: 8),
+
+                  Text(
+                    priceAfetDiscount != null &&
+                        priceAfetDiscount! < price
+                        ? '₹${priceAfetDiscount!.toStringAsFixed(0)}'
+                        : '₹${price.toStringAsFixed(0)}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+
+                  if (priceAfetDiscount != null &&
+                      priceAfetDiscount! < price)
+                    Text(
+                      '₹${price.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey,
+                        decoration: TextDecoration.lineThrough,
+                      ),
+                    ),
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shop/components/product/product_card.dart';
-import 'package:shop/constants.dart';
-import 'package:shop/models/product_model.dart';
-import 'package:shop/route/api_service.dart';
-import 'package:shop/route/route_constants.dart';
-import 'package:shop/screens/helpers/user_helper.dart';
-import 'package:shop/screens/search/views/components/search_form.dart'; // Import SearchForm
+import 'package:sevenext/components/product/product_card.dart';
+import 'package:sevenext/constants.dart';
+import 'package:sevenext/models/product_model.dart';import 'package:sevenext/route/api_service.dart';import 'package:sevenext/route/route_constants.dart';import 'package:sevenext/screens/helpers/user_helper.dart';import 'package:sevenext/screens/search/views/components/search_form.dart'; // Import SearchForm
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -80,34 +76,10 @@ class _SearchScreenState extends State<SearchScreen> {
       }
       print('=== END DEBUG INFO ===');
 
-      // Filter for exact matches (case insensitive)
-      final exactMatches = products.where((product) {
-        final productTitle = product.title.toLowerCase().trim();
-        final searchQuery = trimmedQuery.toLowerCase().trim();
-
-        // Check for exact match
-        return productTitle == searchQuery;
-      }).toList();
-
-      // If we found exact matches, display only those
-      if (exactMatches.isNotEmpty) {
-        setState(() {
-          _productsFuture = Future.value(exactMatches);
-        });
-      } else {
-        // If no exact matches, display all products that contain the search query
-        final partialMatches = products.where((product) {
-          final productTitle = product.title.toLowerCase();
-          final searchQuery = trimmedQuery.toLowerCase();
-
-          // Check if product title contains the search query
-          return productTitle.contains(searchQuery);
-        }).toList();
-
-        setState(() {
-          _productsFuture = Future.value(partialMatches.isNotEmpty ? partialMatches : products);
-        });
-      }
+      // Update the future with the results
+      setState(() {
+        _productsFuture = Future.value(products);
+      });
 
     } catch (e) {
       print('Error performing search: $e');
@@ -165,10 +137,12 @@ class _SearchScreenState extends State<SearchScreen> {
       child: FutureBuilder<List<ProductModel>>(
         future: _productsFuture,
         builder: (context, snapshot) {
-          if (_isLoading) {
+          // 1. Check if we are explicitly loading or the future is still waiting
+          if (_isLoading || snapshot.connectionState == ConnectionState.waiting) {
             return _buildLoadingScreen();
           }
 
+          // 2. Check for errors
           if (snapshot.hasError) {
             return _buildErrorScreen(
               'Error loading products',
@@ -177,8 +151,9 @@ class _SearchScreenState extends State<SearchScreen> {
             );
           }
 
-          if (snapshot.connectionState == ConnectionState.done &&
-              (!snapshot.hasData || snapshot.data!.isEmpty)) {
+          // 3. Extract data and check for empty/null state
+          final products = snapshot.data;
+          if (products == null || products.isEmpty) {
             if (_currentSearchQuery.isEmpty) {
               return _buildInitialSearchScreen();
             } else {
@@ -186,7 +161,7 @@ class _SearchScreenState extends State<SearchScreen> {
             }
           }
 
-          final products = snapshot.data!;
+          // 4. At this point, products is guaranteed to be non-null and non-empty
           return _buildProductsGrid(products);
         },
       ),
@@ -195,66 +170,72 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildInitialSearchScreen() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.search,
-            size: 80,
-            color: Colors.grey.shade400,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Start searching for products!',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey.shade700,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search,
+              size: 80,
+              color: Colors.grey.shade400,
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Type a keyword in the search bar above.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey.shade600),
-          ),
-        ],
+            const SizedBox(height: 16),
+            Text(
+              'Start searching for products!',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey.shade700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Type a keyword in the search bar above.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildEmptyScreen() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.sentiment_dissatisfied_outlined,
-            size: 64,
-            color: Colors.grey,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No products found for "${_currentSearchQuery}"!',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.sentiment_dissatisfied_outlined,
+              size: 64,
               color: Colors.grey,
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Try adjusting your search or check for typos.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: _refreshSearch,
-            child: const Text('Refresh Search'),
-          ),
-        ],
+            const SizedBox(height: 16),
+            Text(
+              'No products found for "${_currentSearchQuery}"!',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try adjusting your search or check for typos.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _refreshSearch,
+              child: const Text('Refresh Search'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -262,31 +243,16 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildProductsGrid(List<ProductModel> products) {
     return Column(
       children: [
+        // Optional user type indicator
         if (_userType != null)
           Container(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            color: _userType == 'b2b'
-                ? Colors.blue.withOpacity(0.1)
-                : Colors.green.withOpacity(0.1),
+            color: lightGreyColor,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  _userType == 'b2b' ? Icons.business : Icons.person,
-                  size: 16,
-                  color: _userType == 'b2b' ? Colors.blue : Colors.green,
-                ),
-                const SizedBox(width: 8),
                 Text(
-                  '${_userType?.toUpperCase() ?? "B2C"} VIEW',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: _userType == 'b2b' ? Colors.blue : Colors.green,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '(${products.length} products found)',
+                  '(${products.length} products)',
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
@@ -311,9 +277,11 @@ class _SearchScreenState extends State<SearchScreen> {
                     image: product.image,
                     brandName: product.brandName,
                     title: product.title,
-                    price: product.price,
-                    priceAfetDiscount: product.priceAfterDiscount,
-                    dicountpercent: product.discountPercent,
+                    price: product.price.toDouble(),
+                    priceAfetDiscount: product.priceAfetDiscount?.toDouble(),
+                    rating: product.rating,
+                    reviews: product.reviews,
+                    dicountpercent: product.discountPercentUI,
                     press: () {
                       Navigator.pushNamed(
                         context,
@@ -330,6 +298,7 @@ class _SearchScreenState extends State<SearchScreen> {
       ],
     );
   }
+
 
   Widget _buildLoadingScreen() {
     return const Center(

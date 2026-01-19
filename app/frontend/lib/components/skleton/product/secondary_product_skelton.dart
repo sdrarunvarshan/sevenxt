@@ -7,7 +7,7 @@ class SeconderyProductSkelton extends StatelessWidget {
   const SeconderyProductSkelton({
     super.key,
     this.isSmall = false,
-    this.padding = const EdgeInsets.all(defaultPadding / 2),
+    this.padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
   });
 
   final bool isSmall;
@@ -19,34 +19,60 @@ class SeconderyProductSkelton extends StatelessWidget {
       padding: padding,
       height: 114,
       width: 256,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.transparent), // Matching OutlinedButton structure
+      ),
       child: Row(
         children: [
           const AspectRatio(
             aspectRatio: 1.15,
             child: Skeleton(),
           ),
-          const SizedBox(width: defaultPadding / 2),
+          const SizedBox(width: 8),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: defaultPadding / 2),
+              padding: const EdgeInsets.symmetric(vertical: 4),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Brand name
+                  const Skeleton(
+                    height: 10,
+                    width: 60,
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  // Title
                   const Skeleton(
                     height: 12,
-                    width: 80,
+                    width: double.infinity,
                   ),
-                  const Spacer(),
-                  const Skeleton(),
-                  if (!isSmall) const SizedBox(height: defaultPadding / 2),
-                  if (!isSmall) const Skeleton(),
-                  const Spacer(),
+                  const SizedBox(height: 2),
                   const Skeleton(
-                    width: 40,
+                    height: 12,
+                    width: 100,
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  // Rating skeleton
+                  const Skeleton(
+                    height: 10,
+                    width: 30,
+                  ),
+
+                  const SizedBox(height: 6),
+
+
+                  // Price
+                  const Skeleton(
+                    width: 50,
                     height: 12,
                   ),
                 ],
               ),
+
             ),
           )
         ],

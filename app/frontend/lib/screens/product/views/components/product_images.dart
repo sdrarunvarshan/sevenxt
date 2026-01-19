@@ -58,7 +58,7 @@ class _ProductImagesState extends State<ProductImages> {
                       imageUrl: widget.images[index],
                       width: double.infinity,
                       height: double.infinity,
-                      radius: defaultBorderRadious * 2,
+                       radius: defaultBorderRadious * 2,
                       fit: BoxFit.cover,
                     ),
 

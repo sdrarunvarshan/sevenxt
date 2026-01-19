@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:shop/route/guest_services.dart';
-import 'package:shop/route/route_constants.dart';
-import 'package:shop/route/api_service.dart';
+import 'package:sevenext/route/guest_services.dart';
+import 'package:sevenext/route/route_constants.dart';
+import 'package:sevenext/route/api_service.dart';
 import '../../../../constants.dart';
 import '../../../helpers/user_helper.dart';
+import 'package:sevenext/models/cart_model.dart';
+
 
 class LogInForm extends StatefulWidget {
   const LogInForm({
@@ -41,7 +43,6 @@ class _LogInFormState extends State<LogInForm> {
     setState(() => _isLoading = true);
 
     try {
-      // Add user_type to the request body based on selected tab
       final response = await ApiService.post(
         '/auth/login',
         body: {
@@ -58,34 +59,54 @@ class _LogInFormState extends State<LogInForm> {
         throw "Invalid login response";
       }
 
-      // Check if the user is trying to login with wrong tab
       final expectedType = widget.isB2C ? 'b2c' : 'b2b';
       if (userTypeFromServer.toLowerCase() != expectedType) {
         throw "You are trying to login as ${widget.isB2C ? 'B2C' : 'B2B'} but your account is ${userTypeFromServer.toUpperCase()}";
       }
 
-      // Save token and user type
       ApiService.token = token;
       final box = Hive.box('auth');
       await box.put('token', token);
       await box.put('is_guest', false);
+      await box.put('user_email', _emailController.text.trim());
+      print('LoginForm: Successfully saved user_email to Hive: ${_emailController.text.trim()}');
+
+      // Fetch user profile to get the phone number and name
       try {
-        await box.put('user_email', _emailController.text.trim());
-        print('LoginForm: Successfully saved user_email to Hive: ${_emailController.text.trim()}');
-        // Verify immediately
-        final savedEmail = await box.get('user_email');
-        print('LoginForm: Verification - email in Hive after save: "$savedEmail"');
-      } catch (e) {
-        print('LoginForm: ERROR saving user_email to Hive: $e');
+        final profile = await ApiService.getUserProfile(); // This will use the new token
+        
+        // 1. Handle Phone
+        final String? userPhone = profile["phone_number"];
+        if (userPhone != null) {
+          await box.put('user_phone', userPhone);
+          print('LoginForm: Successfully saved user_phone from profile: $userPhone');
+        }
+
+        // 2. Handle Name (Prioritize business_name for B2B if full_name is empty)
+        String displayName = profile["full_name"] ?? "";
+        if (userTypeFromServer.toLowerCase() == 'b2b' && (profile["full_name"] == null || profile["full_name"].toString().isEmpty)) {
+          displayName = profile["business_name"] ?? "";
+        }
+        
+        if (displayName.isEmpty) displayName = "User";
+
+        await box.put('user_name', displayName);
+        print('LoginForm: Successfully saved user_name from profile: $displayName');
+
+      } catch (profileError) {
+        print('LoginForm: ERROR fetching user profile: $profileError');
       }
-      // Use UserHelper to save user type instead of auth box
+
+      // Await setUserType to ensure it completes before proceeding
       await UserHelper.setUserType(userTypeFromServer.toLowerCase());
-
-      // Disable guest mode
+      print('LoginForm: User type set in UserHelper: ${userTypeFromServer.toLowerCase()}'); // ADDED PRINT
       Provider.of<GuestService>(context, listen: false).setGuestMode(false);
-
-      // Notify parent
+      final userEmail = _emailController.text.trim();
+      final cart = Cart();
+      await cart.loadUserCart(userEmail);
       widget.onLoginSuccess?.call(userTypeFromServer.toLowerCase());
+
+
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -100,8 +121,6 @@ class _LogInFormState extends State<LogInForm> {
       }
     } catch (e) {
       String message = e.toString();
-
-      // Custom error messages
       if (message.contains("403")) {
         message = "B2B account pending approval or rejected.";
       } else if (message.contains("401")) {
@@ -153,13 +172,14 @@ class _LogInFormState extends State<LogInForm> {
               filled: true,
               fillColor: Colors.white,
               hintText: "Password",
-              prefixIcon: const Icon(Icons.lock_outline),
+              prefixIcon: const Icon(Icons.lock_outline
+              ),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
           const SizedBox(height: defaultPadding),
           _isLoading
-              ? CircularProgressIndicator(color: kPrimaryColor)
+              ? const CircularProgressIndicator(color: kPrimaryColor)
               : ElevatedButton(
             onPressed: _login,
             child: const Text("Log In"),

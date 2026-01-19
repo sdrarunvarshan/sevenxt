@@ -1,28 +1,58 @@
 // screens/returns/return_request_screen.dart
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
-import 'package:shop/constants.dart';
-import 'package:shop/models/order_model.dart';
-import 'package:shop/screens/order/views/orders_repository.dart';
+import 'package:intl/intl.dart';import 'package:sevenext/constants.dart';import 'package:sevenext/models/order_model.dart';import 'package:sevenext/screens/order/views/orders_repository.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
+import 'dart:io' show File;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../models/return_model.dart';
+import '../../product/views/components/returns_repository.dart';
+ // default to refund
+
 
 class ReturnRequestScreen extends StatefulWidget {
   final Order order;
+  final OrderedProduct product;
+  final ReturnType initialType;
 
-  const ReturnRequestScreen({super.key, required this.order});
+  const ReturnRequestScreen({
+    super.key,
+    required this.order,
+    required this.product,
+    this.initialType = ReturnType.refund,
+  });
 
   @override
   State<ReturnRequestScreen> createState() => _ReturnRequestScreenState();
 }
 
 class _ReturnRequestScreenState extends State<ReturnRequestScreen> {
+  late TextEditingController _detailsController;
+  int _selectedQuantity = 1;
   String _selectedReason = '';
   String _additionalDetails = '';
-  List<String> _selectedImages = [];
+  List<XFile> _selectedImages = [];
   final ImagePicker _picker = ImagePicker();
   bool _isSubmitting = false;
+  late ReturnType _selectedType;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedType = widget.initialType;
+    _detailsController = TextEditingController();
+    if (widget.product.quantity < 1) {
+      _selectedQuantity = 0;
+    }
+  }
+  @override
+  void dispose() {
+    _detailsController.dispose();
+    super.dispose();
+  }
+
 
   final List<String> _returnReasons = [
     'Wrong item delivered',
@@ -34,15 +64,22 @@ class _ReturnRequestScreenState extends State<ReturnRequestScreen> {
   ];
 
   Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      setState(() {
-        _selectedImages.add(image.path);
-      });
-    }
+    final XFile? image = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+
+    if (image == null) return;
+
+    setState(() {
+      _selectedImages.add(image);
+    });
   }
 
+
+
   Future<void> _submitReturnRequest() async {
+    // 1️⃣ Reason validation
     if (_selectedReason.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -53,14 +90,54 @@ class _ReturnRequestScreenState extends State<ReturnRequestScreen> {
       return;
     }
 
+    // 2️⃣ Additional details validation
+    if (_detailsController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please provide additional details'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // 3️⃣ Image upload validation
+    if (_selectedImages.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please upload at least one image'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isSubmitting = true;
     });
-
     try {
       // In a real app, you would upload images to a server
       // For now, we'll just update the order status locally
-
+      if (widget.order.products.isNotEmpty) {
+        await ReturnsRepository.submitReturnRequest(
+          order: widget.order,
+          product: widget.product, // Pass the orderItemId
+          reason: _selectedReason,
+          quantity: _selectedQuantity,
+          details: _additionalDetails,
+          images: _selectedImages,
+          type: _selectedType,
+        );
+      } else {
+        // Handle the case where there are no products in the order
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Order has no products to return.'),
+              backgroundColor: Colors.red,
+            )
+        );
+        return;
+      }
       // Update order status to "return requested"
       // You need to implement this method in OrdersRepository
       await Future.delayed(const Duration(seconds: 2)); // Simulate API call
@@ -92,7 +169,7 @@ class _ReturnRequestScreenState extends State<ReturnRequestScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Request Return"),
+        title: Text(_selectedType == ReturnType.exchange ? "Request Exchange" : "Request Return"),
         centerTitle: true,
       ),
       body: Padding(
@@ -116,14 +193,64 @@ class _ReturnRequestScreenState extends State<ReturnRequestScreen> {
                       style: const TextStyle(color: greyColor),
                     ),
                     Text(
-                      "Total: \$${widget.order.totalPrice.toStringAsFixed(2)}",
+                      "Total: \u20B9${widget.order.totalPrice.toStringAsFixed(2)}",
                       style: const TextStyle(color: greyColor),
                     ),
                   ],
                 ),
               ),
             ),
-
+            const SizedBox(height: defaultPadding),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(defaultPadding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Quantity to ${_selectedType == ReturnType.exchange ? 'Exchange' : 'Return'}",
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        // Decrease Button
+                        IconButton(
+                          icon: const Icon(Icons.remove_circle_outline),
+                          onPressed: _selectedQuantity > 1
+                              ? () => setState(() => _selectedQuantity--)
+                              : null,
+                        ),
+                        // Quantity Display
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            _selectedQuantity.toString(),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                        ),
+                        // Increase Button
+                        IconButton(
+                          icon: const Icon(Icons.add_circle_outline),
+                          onPressed: _selectedQuantity < widget.product.quantity
+                              ? () => setState(() => _selectedQuantity++)
+                              : null,
+                        ),
+                        const Spacer(),
+                        Text(
+                          "Available: ${widget.product.quantity}",
+                          style: const TextStyle(color: greyColor),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: defaultPadding),
 
             // Reason for Return
@@ -134,7 +261,7 @@ class _ReturnRequestScreenState extends State<ReturnRequestScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Reason for Return",
+                      "Reason for ${_selectedType == ReturnType.exchange ? 'Exchange' : 'Return'}",
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 12),
@@ -165,11 +292,12 @@ class _ReturnRequestScreenState extends State<ReturnRequestScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Additional Details",
+                      "Attach Details (order item, issue description)",
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 12),
                     TextField(
+                      controller: _detailsController,
                       maxLines: 4,
                       decoration: const InputDecoration(
                         hintText: 'Describe the issue in detail...',
@@ -207,7 +335,7 @@ class _ReturnRequestScreenState extends State<ReturnRequestScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        ..._selectedImages.map((imagePath) {
+                        ..._selectedImages.map((xFile) {
                           return Stack(
                             children: [
                               Container(
@@ -216,7 +344,9 @@ class _ReturnRequestScreenState extends State<ReturnRequestScreen> {
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(8),
                                   image: DecorationImage(
-                                    image: FileImage(File(imagePath)),
+                                    image: kIsWeb
+                                        ? NetworkImage(xFile.path)
+                                        : FileImage(File(xFile.path)) as ImageProvider,
                                     fit: BoxFit.cover,
                                   ),
                                 ),
@@ -228,7 +358,7 @@ class _ReturnRequestScreenState extends State<ReturnRequestScreen> {
                                   icon: const Icon(Icons.close, size: 16),
                                   onPressed: () {
                                     setState(() {
-                                      _selectedImages.remove(imagePath);
+                                      _selectedImages.remove(xFile);
                                     });
                                   },
                                 ),
@@ -261,13 +391,43 @@ class _ReturnRequestScreenState extends State<ReturnRequestScreen> {
             ),
 
             const SizedBox(height: defaultPadding * 2),
-
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(defaultPadding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Request Type",
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    RadioListTile<ReturnType>(
+                      title: const Text("Refund"),
+                      value: ReturnType.refund,
+                      groupValue: _selectedType,
+                      onChanged: (value) {
+                        setState(() => _selectedType = value!);
+                      },
+                    ),
+                    RadioListTile<ReturnType>(
+                      title: const Text("Exchange"),
+                      value: ReturnType.exchange,
+                      groupValue: _selectedType,
+                      onChanged: (value) {
+                        setState(() => _selectedType = value!);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: defaultPadding),
             // Submit Button
             ElevatedButton(
               onPressed: _isSubmitting ? null : _submitReturnRequest,
               child: _isSubmitting
                   ? const CircularProgressIndicator(color: kPrimaryColor)
-                  : const Text("Submit Return Request"),
+                  : Text("Submit ${_selectedType == ReturnType.exchange ? 'Exchange' : 'Return'} Request"),
             ),
           ],
         ),

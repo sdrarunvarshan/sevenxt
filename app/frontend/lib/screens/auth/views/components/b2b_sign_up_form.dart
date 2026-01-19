@@ -6,13 +6,14 @@ import 'package:file_picker/file_picker.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'package:shop/route/api_service.dart';
-import 'package:shop/route/guest_services.dart';
+import 'package:sevenext/route/api_service.dart';
+import 'package:sevenext/route/guest_services.dart';
 import '../../../../constants.dart';
 import '../../../../route/route_constants.dart';
 import '../../../helpers/user_helper.dart';
-import '../../../../route/twilio_service.dart';
-import 'package:shop/screens/auth/views/components/otp_dialog.dart';
+import 'package:sevenext/screens/auth/views/components/otp_dialog.dart';
+import 'package:sevenext/models/cart_model.dart';
+
 
 class B2BSignUpForm extends StatefulWidget {
   const B2BSignUpForm({
@@ -33,8 +34,9 @@ class _B2BSignUpState extends State<B2BSignUpForm> {
   late final TextEditingController _emailController;
   late final TextEditingController _passwordController;
   late final TextEditingController _phoneNumberController;
-  late final TextEditingController _streetController;
+  late final TextEditingController _addressController; // Renamed from _streetController
   late final TextEditingController _cityController;
+  late final TextEditingController _stateController; // Added state controller
   late final TextEditingController _postalCodeController;
   late final TextEditingController _countryController;
 
@@ -58,8 +60,9 @@ class _B2BSignUpState extends State<B2BSignUpForm> {
     _emailController = TextEditingController();
     _passwordController = TextEditingController();
     _phoneNumberController = TextEditingController();
-    _streetController = TextEditingController();
+    _addressController = TextEditingController(); // Initialize new controller
     _cityController = TextEditingController();
+    _stateController = TextEditingController(); // Initialize state controller
     _postalCodeController = TextEditingController();
     _countryController = TextEditingController();
   }
@@ -72,8 +75,9 @@ class _B2BSignUpState extends State<B2BSignUpForm> {
     _emailController.dispose();
     _passwordController.dispose();
     _phoneNumberController.dispose();
-    _streetController.dispose();
+    _addressController.dispose(); // Dispose new controller
     _cityController.dispose();
+    _stateController.dispose(); // Dispose state controller
     _postalCodeController.dispose();
     _otpController.dispose();
     _countryController.dispose();
@@ -192,15 +196,21 @@ class _B2BSignUpState extends State<B2BSignUpForm> {
         Provider.of<GuestService>(context, listen: false).setGuestMode(false);
         await UserHelper.setUserType(UserHelper.b2b);
         print('✅ B2B Signup: Set user type to B2B');
+        // 🔥 LOAD USER-SCOPED CART (B2B)
+        final cart = Cart();
+        await cart.loadUserCart(email);
+
+        print('🛒 Cart loaded for B2B user: $email');
 
         // Create address if provided
-        final street = _streetController.text.trim();
-        if (street.isNotEmpty) {
+        final addressLine = _addressController.text.trim();
+        if (addressLine.isNotEmpty) {
           final addressPostPayload = {
             'name': 'Primary Business Address',
-            'street': street,
+            'address': addressLine, // Changed from 'street' to 'address'
             'city': _cityController.text.trim(),
-            'postal_code': _postalCodeController.text.trim(),
+            'state': _stateController.text.trim(), // Added state
+            'pincode': _postalCodeController.text.trim(),
             'country': _countryController.text.trim(),
             'is_default': true,
           };
@@ -208,6 +218,9 @@ class _B2BSignUpState extends State<B2BSignUpForm> {
           await ApiService.post('/users/addresses', body: addressPostPayload);
           print('✅ B2B Signup: Posted initial address to /users/addresses');
         }
+        
+        // --- FIX START: Reload cart after successful B2B signup ---
+
 
         print('Token successfully saved to Hive.');
       } else {
@@ -231,7 +244,7 @@ class _B2BSignUpState extends State<B2BSignUpForm> {
   }
 
   Future<void> _sendPhoneVerificationOtp() async {
-    final phone = TwilioService.formatPhoneNumber( _phoneNumberController.text.trim());
+    final phone = ApiService.formatPhoneNumber(_phoneNumberController.text.trim());
     if (phone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter phone number first')),
@@ -242,42 +255,36 @@ class _B2BSignUpState extends State<B2BSignUpForm> {
     setState(() => _isSendingOtp = true);
 
     try {
-      final result = await TwilioService.sendVerificationOtp(
-          phone,
-
-      );
+      final result = await ApiService.sendVerificationOtp(phone);
 
       setState(() => _isSendingOtp = false);
 
-      if (result['success'] == true) {
-        // Show OTP dialog
-        String? otp = await showDialog<String>(
-          context: context,
-          builder: (context) => OtpDialog(phone: phone),
-        );
-
-        if (otp == null) return;
-
-        // Verify OTP
-        await _verifyOtpWithPhone(phone, otp);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? "Failed to send OTP")),
-        );
+      if (result['success'] == false) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(result['message'] ?? "Failed to send OTP")),
+            );
+          }
+          return;
       }
-    } catch (e) {
-      setState(() => _isSendingOtp = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error sending OTP: $e")),
+      
+      // Proceed to show dialog
+      print("✅ OTP sent successfully, showing dialog...");
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      if (!mounted) return;
+
+      // Show OTP dialog
+      String? otp = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => OtpDialog(
+          phone: phone,
+          onVerify: (otp) => ApiService.verifyOtp(phone, otp),
+        ),
       );
-    }
-  }
 
-  Future<void> _verifyOtpWithPhone(String phone, String otp) async {
-    try {
-      final result = await TwilioService.verifyOtp(phone, otp);
-
-      if (result['success'] == true) {
+      if (otp != null) {
         setState(() {
           _phoneVerified = true;
           _verificationOtp = otp;
@@ -285,20 +292,15 @@ class _B2BSignUpState extends State<B2BSignUpForm> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Phone verified successfully")),
-          );
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['message'] ?? "Invalid OTP")),
+            const SnackBar(content: Text("Phone verified successfully")),
           );
         }
       }
     } catch (e) {
+      setState(() => _isSendingOtp = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Verification failed: $e")),
+          SnackBar(content: Text("Error sending OTP: $e")),
         );
       }
     }
@@ -465,7 +467,7 @@ class _B2BSignUpState extends State<B2BSignUpForm> {
             ElevatedButton(
               onPressed: _isSendingOtp ? null : _sendPhoneVerificationOtp,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
+                backgroundColor: kPrimaryColor,
                 minimumSize: const Size(double.infinity, 45),
               ),
               child: _isSendingOtp
@@ -480,22 +482,23 @@ class _B2BSignUpState extends State<B2BSignUpForm> {
           // Verification Status Indicator
           if (!_phoneVerified && _phoneNumberController.text.isNotEmpty)
             Container(
-              padding: const EdgeInsets.all(8),
+              height: 40,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               margin: const EdgeInsets.only(top: 8, bottom: defaultPadding),
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange),
+                color: kPrimaryColor.withOpacity(0.9),
+                borderRadius: BorderRadius.zero, // No rounding
+                border: Border.all(color: kPrimaryColor),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.warning_amber, color: Colors.orange.shade700, size: 16),
+                  Icon(Icons.warning_amber, color: Colors.white, size: 16),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Phone number not verified. Click "Verify" to receive OTP.',
                       style: TextStyle(
-                        color: Colors.orange.shade900,
+                        color: Colors.white,
                         fontSize: 12,
                       ),
                     ),
@@ -508,7 +511,7 @@ class _B2BSignUpState extends State<B2BSignUpForm> {
 
           // Street
           TextFormField(
-            controller: _streetController,
+            controller: _addressController,
             decoration: const InputDecoration(hintText: "Street"),
             validator: (v) => v == null || v.isEmpty ? "Enter street" : null,
           ),
@@ -520,6 +523,15 @@ class _B2BSignUpState extends State<B2BSignUpForm> {
             controller: _cityController,
             decoration: const InputDecoration(hintText: "City"),
             validator: (v) => v == null || v.isEmpty ? "Enter city" : null,
+          ),
+
+          Container(height: defaultPadding),
+          
+          // State
+          TextFormField(
+            controller: _stateController,
+            decoration: const InputDecoration(hintText: "State"),
+            validator: (v) => v == null || v.isEmpty ? "Enter state" : null,
           ),
 
           Container(height: defaultPadding),
@@ -642,8 +654,23 @@ class _B2BSignUpState extends State<B2BSignUpForm> {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const TextSpan(
-                        text: "& privacy policy.",
+                      TextSpan(
+                        text: "& ",
+                        style: TextStyle(
+                          color: Theme.of(context).textTheme.bodyMedium!.color,
+                        ),
+                      ),
+                      TextSpan(
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () {
+                            Navigator.pushNamed(
+                                context, privacyPolicyScreenRoute);
+                          } ,
+                        text: "privacy policy.",
+                          style: const TextStyle(
+                            color: kPrimaryColor,
+                            fontWeight: FontWeight.w500,
+                          )
                       ),
                     ],
                   ),

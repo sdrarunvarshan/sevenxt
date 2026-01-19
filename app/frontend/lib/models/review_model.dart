@@ -18,4 +18,17 @@ class ReviewModel {
     required this.date,
     this.images,
   });
+  bool isMine(String currentUserId) => userId == currentUserId;
+
+  factory ReviewModel.fromJson(Map<String, dynamic> json, String productId) {
+    return ReviewModel(
+      id: json['id'],
+      userId: json['user_id'] ?? '',
+      userName: json['full_name'] ?? json['email'] ?? 'User',
+      productId: productId,
+      rating: (json['rating'] as num).toDouble(),
+      comment: json['comment'] ?? '',
+      date: DateTime.parse(json['created_at']),
+    );
+  }
 }

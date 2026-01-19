@@ -10,17 +10,26 @@ class SeconderyProductsSkelton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return const SizedBox(
       height: 114,
-      child: ListView.builder(
+      child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        itemCount: 4,
-        itemBuilder: (context, index) => Padding(
-          padding: EdgeInsets.only(
-            left: defaultPadding,
-            right: index == 3 ? defaultPadding : 0,
-          ),
-          child: const SeconderyProductSkelton(),
+        physics: NeverScrollableScrollPhysics(),
+        child: Row(
+          children: [
+            Padding(
+              padding: EdgeInsets.only(left: defaultPadding),
+              child: SeconderyProductSkelton(),
+            ),
+            Padding(
+              padding: EdgeInsets.only(left: defaultPadding),
+              child: SeconderyProductSkelton(),
+            ),
+            Padding(
+              padding: EdgeInsets.only(left: defaultPadding, right: defaultPadding),
+              child: SeconderyProductSkelton(),
+            ),
+          ],
         ),
       ),
     );

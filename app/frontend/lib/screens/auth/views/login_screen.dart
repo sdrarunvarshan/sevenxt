@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:shop/constants.dart';
-import 'package:shop/route/route_constants.dart';
+import 'package:sevenext/constants.dart';
+import 'package:sevenext/route/route_constants.dart';
 import '../../../route/api_service.dart';
 import '../../../route/guest_services.dart';
 import 'components/login_form.dart';
@@ -93,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(child: SvgPicture.asset("assets/logo/Shoplon.svg", height: 80)),
+                  Center(child: SvgPicture.asset("assets/logo/sevenextlon.svg", height: 80)),
                   const SizedBox(height: defaultPadding / 2),
 
                   // Show message if user type is locked

@@ -13,7 +13,7 @@ class CartButton extends StatelessWidget {
 
   final double price;
   final String title, subTitle;
-  final VoidCallback press;
+  final VoidCallback? press;
   final bool isLoading;
 
   @override

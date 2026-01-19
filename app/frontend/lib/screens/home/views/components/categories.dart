@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:shop/route/screen_export.dart';
+import 'package:sevenext/route/screen_export.dart';
 import '../../../../constants.dart';
 import '../../../../route/route_constants.dart';
 
@@ -39,7 +39,7 @@ List<CategoryModel> demoCategories = [
   ),
   CategoryModel(
     name: "Cameras & Photography",
-    svgSrc: "assets/icons/Cash.svg",
+    svgSrc: "assets/icons/Camera.svg",
     route: categoryProductsScreen,
     title: "Cameras & Photography",
   ),

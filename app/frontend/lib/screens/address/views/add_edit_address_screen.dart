@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shop/constants.dart';
-import 'package:shop/screens/address/views/addresses_screen.dart';
-import 'package:shop/route/api_service.dart'; // Import ApiService
+import 'package:sevenext/constants.dart';
+import 'package:sevenext/screens/address/views/addresses_screen.dart';
+import 'package:sevenext/route/api_service.dart'; // Import ApiService
 
 class AddEditAddressScreen extends StatefulWidget {
   final Address? address;
@@ -22,8 +22,9 @@ class AddEditAddressScreen extends StatefulWidget {
 class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
-  late TextEditingController _streetController;
+  late TextEditingController _addressController; // Renamed from _streetController to _addressController
   late TextEditingController _cityController;
+  late TextEditingController _stateController; // Added state controller
   late TextEditingController _postalCodeController;
   late TextEditingController _countryController;
   late bool _isDefault;
@@ -32,8 +33,9 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.address?.name ?? '');
-    _streetController = TextEditingController(text: widget.address?.street ?? '');
+    _addressController = TextEditingController(text: widget.address?.address ?? ''); // Updated controller name and used address field from model
     _cityController = TextEditingController(text: widget.address?.city ?? '');
+    _stateController = TextEditingController(text: widget.address?.state ?? ''); // Added state
     _postalCodeController = TextEditingController(text: widget.address?.postalCode ?? '');
     _countryController = TextEditingController(text: widget.address?.country ?? '');
     _isDefault = widget.address?.isDefault ?? false;
@@ -42,8 +44,9 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _streetController.dispose();
+    _addressController.dispose(); // Disposed new controller name
     _cityController.dispose();
+    _stateController.dispose(); // Added dispose
     _postalCodeController.dispose();
     _countryController.dispose();
     super.dispose();
@@ -59,20 +62,16 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
 
       final Map<String, dynamic> body = {
         'name': _nameController.text.trim(),
-        'street': _streetController.text.trim(),
+        'address': _addressController.text.trim(), // Changed key from 'street' to 'address'
         'city': _cityController.text.trim(),
-        'postal_code': _postalCodeController.text.trim(),
-         'country': _countryController.text.trim(),
+        'state': _stateController.text.trim(), // Added state to body
+        'pincode': _postalCodeController.text.trim(),
+        'country': _countryController.text.trim(),
         'is_default': _isDefault,
       };
 
       if (isEditing) {
         // EDIT MODE
-        // Pass addressId as well, assuming backend needs it to update the addresses table entry
-        if (isEditing) {
-          await ApiService.put('/users/addresses/${widget.userAddressId}', body: body);
-        }
-
         await ApiService.put('/users/addresses/${widget.userAddressId}', body: body);
       } else {
         // ADD NEW MODE
@@ -109,9 +108,11 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
             children: [
               TextFormField(controller: _nameController, decoration: const InputDecoration(labelText: 'Name (Home, Work, etc.)'), validator: (v) => v!.isEmpty ? 'Required' : null),
               const SizedBox(height: defaultPadding),
-              TextFormField(controller: _streetController, decoration: const InputDecoration(labelText: 'Street Address'), validator: (v) => v!.isEmpty ? 'Required' : null),
+              TextFormField(controller: _addressController, decoration: const InputDecoration(labelText: 'Address Line'), validator: (v) => v!.isEmpty ? 'Required' : null), // Renamed label
               const SizedBox(height: defaultPadding),
               TextFormField(controller: _cityController, decoration: const InputDecoration(labelText: 'City'), validator: (v) => v!.isEmpty ? 'Required' : null),
+              const SizedBox(height: defaultPadding),
+              TextFormField(controller: _stateController, decoration: const InputDecoration(labelText: 'State'), validator: (v) => v!.isEmpty ? 'Required' : null), // Added State field
               const SizedBox(height: defaultPadding),
               TextFormField(controller: _postalCodeController, decoration: const InputDecoration(labelText: 'Postal Code'), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Required' : null),
               const SizedBox(height: defaultPadding),

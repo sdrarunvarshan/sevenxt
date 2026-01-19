@@ -9,14 +9,11 @@ import '../../../constants.dart';
 class BannerMStyle3 extends StatelessWidget {
   const BannerMStyle3({
     super.key,
-    this.image = "https://i.imgur.com/gqSGpaj.png",
-    required this.title,
-    required this.press,
-    required this.discountParcent,
+    required this.image ,
+     required this.press,
+
   });
   final String? image;
-  final String title;
-  final int discountParcent;
   final VoidCallback press;
 
   @override
@@ -24,9 +21,9 @@ class BannerMStyle3 extends StatelessWidget {
     return BannerM(
       image: image!,
       press: press,
-      children: [
+      children: const [
         Padding(
-          padding: const EdgeInsets.all(defaultPadding),
+          padding: EdgeInsets.all(defaultPadding),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -35,54 +32,17 @@ class BannerMStyle3 extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.end,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: defaultPadding / 8),
+                    SizedBox(height: defaultPadding / 8),
                     // Reduced spacing
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: defaultPadding / 2,
-                          vertical: defaultPadding / 8),
-                      color: Colors.white70,
-                      child: Text(
-                        "$discountParcent% off",
-                        style: const TextStyle(
-                          color: Colors.black54,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: defaultPadding / 4),
+
+                    SizedBox(height: defaultPadding / 4),
                     // Adjusted spacing
-                    Text(
-                      title.toUpperCase(),
-                      style: const TextStyle(
-                        fontFamily: grandisExtendedFont,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        height: 1,
-                      ),
-                    ),
+
                   ],
                 ),
               ),
-              const SizedBox(width: defaultPadding),
-              SizedBox(
-                height: 48,
-                width: 48,
-                child: ElevatedButton(
-                  onPressed: press,
-                  style: ElevatedButton.styleFrom(
-                    shape: const CircleBorder(),
-                    backgroundColor: Colors.white,
-                  ),
-                  child: SvgPicture.asset(
-                    "assets/icons/Arrow - Right.svg",
-                    colorFilter:
-                    const ColorFilter.mode(Colors.black, BlendMode.srcIn),
-                  ),
-                ),
-              ),
+              SizedBox(width: defaultPadding),
+
             ],
           ),
         ),
