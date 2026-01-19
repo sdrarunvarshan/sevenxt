@@ -286,7 +286,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                 _buildTextField('Email', _emailController, enabled: false), // Email cannot be changed
 
                 const SizedBox(height: 10),
-                _buildTextField('Phone Number', _phoneController),
+                _buildTextField('Phone Number', _phoneController,enabled: false),
 
                 if (_isB2B) ...[
                   const SizedBox(height: 10),
