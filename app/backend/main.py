@@ -1533,7 +1533,7 @@ async def calculate_shipping(payload: dict):
 
 # ============================ ORDER PLACEMENT ============================
 def map_order_status_for_app(db_status: str) -> str:
-    if db_status in ["pending", "confirmed", "processing"]:
+    if db_status in ["Pending", "Confirmed", "Processing"]:
         return "Ordered"
     return db_status or "Ordered"
 @app.post("/orders/place")
@@ -1546,7 +1546,7 @@ async def place_order_from_app(order_data: OrderCreate, current_user_id: str = D
     created_order_items = []
     
     try:
-        actual_order_status = "pending"
+        actual_order_status = "Pending"
 
         # Get user type from token
         actual_customer_type = order_data.customer_type or "b2c"
