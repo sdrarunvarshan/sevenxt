@@ -1532,6 +1532,10 @@ async def calculate_shipping(payload: dict):
     }
 
 # ============================ ORDER PLACEMENT ============================
+def map_order_status_for_app(db_status: str) -> str:
+    if db_status in ["pending", "confirmed", "processing"]:
+        return "Ordered"
+    return db_status or "Ordered"
 @app.post("/orders/place")
 async def place_order_from_app(order_data: OrderCreate, current_user_id: str = Depends(get_current_user)):
     """
@@ -1542,6 +1546,8 @@ async def place_order_from_app(order_data: OrderCreate, current_user_id: str = D
     created_order_items = []
     
     try:
+        actual_order_status = "pending"
+
         # Get user type from token
         actual_customer_type = order_data.customer_type or "b2c"
 
@@ -1587,7 +1593,7 @@ async def place_order_from_app(order_data: OrderCreate, current_user_id: str = D
             order_data.cgst_percentage,
             len(order_data.products),
             actual_customer_type,
-            order_data.order_status,
+            actual_order_status,
             order_data.payment_status,
             order_data.payment_method,
             '[]',  # Empty array initially
