@@ -1077,7 +1077,7 @@ async def search_products(
                 compare_at_price,
                 info
             FROM products 
-            WHERE status = 'Published' 
+            WHERE status = 'Active' 
             AND name ILIKE %s
             ORDER BY created_at DESC
             LIMIT %s
