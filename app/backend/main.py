@@ -1806,7 +1806,7 @@ async def get_orders_by_user(
                 'items_count': order.get('items_count', len(items)),
                 'customer_type': order.get('customer_type', 'b2c'),
                 'type': order.get('customer_type', 'b2c'),
-                'status': order.get('status', 'processing'),
+                'status': map_order_status_for_app(order.get('status')),
                 'payment_status': order.get('payment', 'pending'),
                 'payment_method': order.get('payment_method', ''),
                 'date': date_str,
