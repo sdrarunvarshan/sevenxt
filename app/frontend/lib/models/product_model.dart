@@ -88,6 +88,31 @@ class ProductModel {
       return [];
     }
     
+    // ---------- Parse Util ----------
+    List<String> parseList(dynamic data) {
+      if (data == null) return [];
+      if (data is List) return data.map((e) => e.toString()).toList();
+      if (data is String) {
+        if (data.trim().isEmpty) return [];
+        try {
+          final decoded = jsonDecode(data);
+          if (decoded is List) return decoded.map((e) => e.toString()).toList();
+          return [data];
+        } catch (_) {
+          // Fallback cleanup for strings like "[Color1, Color2]" or "Color1, Color2"
+          String clean = data.replaceAll('[', '').replaceAll(']', '');
+          if (clean.trim().isEmpty) return [];
+          return clean
+              .split(',')
+              .map((e) => e.trim().replaceAll('"', '').replaceAll("'", ""))
+              .where((e) => e.isNotEmpty)
+              .toList();
+        }
+      }
+      return [];
+    }
+
+    
     final List<String> images = parseImages(json['images'] ?? json['image']);
     final String mainImage = images.isNotEmpty ? images.first : json['image']?.toString() ?? '';
 
@@ -157,13 +182,7 @@ class ProductModel {
       heightCm: (json['height'] ?? 0).toDouble(),
       stateGstPercent: (json['sgst'] ?? 0).toDouble(),
       centralGstPercent: (json['cgst'] ?? 0).toDouble(),
-      colors: json['colors'] != null
-          ? json['colors']
-          .toString()
-          .split(',')
-          .map((e) => e.trim())
-          .toList()
-          : [],
+      colors: parseList(json['colors']),
       image: mainImage,
       images: images,
       compareAtPrice: compareAtPrice,
