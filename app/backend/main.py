@@ -683,7 +683,8 @@ async def get_me(token: str = Depends(oauth2_scheme)):
                     phone_number,
                     gstin,
                     pan,
-                    created_at
+                    created_at,
+                    status
                 FROM b2b_applications
                 WHERE user_id = %s
             """, (user_id,))
@@ -696,6 +697,7 @@ async def get_me(token: str = Depends(oauth2_scheme)):
                 user_info["phone_number"] = row["phone_number"]
                 user_info["gstin"] = row["gstin"]
                 user_info["pan"] = row["pan"]
+                user_info["status"] = row["status"]
                 user_info["created_at"] = row["created_at"]
                 
                 # Also get from auth_users for consistency
