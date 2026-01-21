@@ -1994,8 +1994,9 @@ async def create_refund(
         proof_image_path,
         type,
         product_name,
-        quantity
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        quantity,
+        status
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id
         """, (
         order_id,
