@@ -2009,7 +2009,8 @@ async def create_refund(
         images_json,       # proof_image_path
         'refund',          # type
         product_name,
-        quantity
+        quantity,
+        'Pending'    
         ))
 
         refund_id = cursor.fetchone()[0]
