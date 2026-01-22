@@ -687,6 +687,8 @@ async def get_me(token: str = Depends(oauth2_scheme)):
                     status
                 FROM b2b_applications
                 WHERE user_id = %s
+                ORDER BY created_at DESC
+                LIMIT 1
             """, (user_id,))
             row = cursor.fetchone()
             
