@@ -8,7 +8,7 @@ from passlib.context import CryptContext
 # Use a long, random string for your actual secret key.
 SECRET_KEY = "a-very-secret-key-that-you-should-change"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30  # The token will be valid for 30 minutes
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 30   # The token will be valid for 30 minutes
 
 # --- Password Hashing ---
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
