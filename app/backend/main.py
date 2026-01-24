@@ -2826,3 +2826,27 @@ async def get_cms_pages(
     finally:
         cursor.close()
         conn.close()
+@app.get("/notifications", response_model=list[NotificationOut])
+def get_notifications(
+    user_type: str,  # b2b / b2c
+    db: Session = Depends(get_db)
+):
+    query = """
+        SELECT id, title, message, audience, created_at
+        FROM notifications
+        WHERE audience = 'all' OR audience = :user_type
+        ORDER BY created_at DESC
+    """
+
+    rows = db.execute(query, {"user_type": user_type}).fetchall()
+
+    return [
+        {
+            "id": row.id,
+            "title": row.title,
+            "message": row.message,
+            "audience": row.audience,
+            "time": row.created_at.strftime("%d %b %I:%M %p"),
+        }
+        for row in rows
+    ]       
