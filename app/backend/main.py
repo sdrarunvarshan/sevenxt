@@ -9,7 +9,7 @@ import hmac
 import hashlib
 import requests
 from datetime import datetime, timedelta,timezone
-from fastapi import Request,FastAPI,APIRouter, HTTPException, Depends, UploadFile, File, Form, status,Body
+from fastapi import Request,FastAPI,APIRouter, HTTPException, Depends, UploadFile, File, Form, status,Body,Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer
@@ -23,7 +23,7 @@ from security import SECRET_KEY, ALGORITHM
 from pydantic import BaseModel
 from typing import Optional, List
 from pydantic import Field
-from models import UserCreate, UserLogin, AddressCreate, B2CRegister, OrderCreate , PhoneRequest, VerifyOtpRequest,normalize_phone, ResetPasswordRequest ,CreatePaymentRequest,VerifyPaymentRequest  
+from models import UserCreate, UserLogin, AddressCreate, B2CRegister, OrderCreate , PhoneRequest, VerifyOtpRequest,normalize_phone, ResetPasswordRequest ,CreatePaymentRequest,VerifyPaymentRequest,NotificationOut    
 from dotenv import load_dotenv
 from dotenv import load_dotenv
 
@@ -2827,25 +2827,31 @@ async def get_cms_pages(
         conn.close()
 @app.get("/notifications", response_model=list[NotificationOut])
 def get_notifications(
-    user_type: str,  # b2b / b2c
-    db: Session = Depends(get_db)
+    user_type: str = Query(..., alias="userType")  # ✅ FIX
 ):
-    query = """
-        SELECT id, title, message, audience, created_at
-        FROM notifications
-        WHERE audience = 'all' OR audience = :user_type
-        ORDER BY created_at DESC
-    """
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
 
-    rows = db.execute(query, {"user_type": user_type}).fetchall()
+    try:
+        cursor.execute("""
+            SELECT id, title, message, audience, created_at
+            FROM notifications
+            WHERE audience = 'all' OR audience = %s
+            ORDER BY created_at DESC
+        """, (user_type,))
 
-    return [
-        {
-            "id": row.id,
-            "title": row.title,
-            "message": row.message,
-            "audience": row.audience,
-            "time": row.created_at.strftime("%d %b %I:%M %p"),
-        }
-        for row in rows
-    ]       
+        rows = cursor.fetchall()
+
+        return [
+            {
+                "id": row["id"],
+                "title": row["title"],
+                "message": row["message"],
+                "audience": row["audience"],
+                "time": row["created_at"].strftime("%d %b %I:%M %p"),
+            }
+            for row in rows
+        ]
+    finally:
+        cursor.close()
+        conn.close()
