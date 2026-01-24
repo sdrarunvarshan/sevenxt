@@ -133,3 +133,9 @@ class VerifyPaymentRequest(BaseModel):
     razorpay_payment_id: str
     razorpay_signature: str
     order_id: str  # Your internal order ID    
+class NotificationOut(BaseModel):
+    id: int
+    title: str
+    message: str
+    audience: str
+    time: str    
