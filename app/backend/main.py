@@ -15,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer
 import urllib.parse
 from jose import jwt, JWTError
+from sqlalchemy.orm import Session
 from datetime import datetime
 from database import get_db_connection
 from psycopg2.extras import RealDictCursor
