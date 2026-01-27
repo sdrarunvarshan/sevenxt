@@ -1420,6 +1420,42 @@ async def delete_review(
     finally:
         cursor.close()
         conn.close()
+def check_pincode_serviceability(pincode: str):
+    url = "https://track.delhivery.com/c/api/pin-codes/json/"
+    params = {"filter_codes": pincode}
+    headers = {"Authorization": f"Token {DELHIVERY_TOKEN}"}
+
+    res = requests.get(url, params=params, headers=headers, timeout=5)
+
+    if res.status_code != 200:
+        return {
+            "serviceable": False,
+            "reason": "Serviceability check failed"
+        }
+
+    data = res.json()
+    pincodes = data.get("delivery_codes", [])
+
+    if not pincodes:
+        return {
+            "serviceable": False,
+            "reason": "NSZ (Non-serviceable pincode)"
+        }
+
+    pincode_info = pincodes[0].get("postal_code", {})
+    remark = pincode_info.get("remarks", "")
+
+    if remark.lower() == "embargo":
+        return {
+            "serviceable": False,
+            "reason": "Temporarily unavailable (Embargo)"
+        }
+
+    return {
+        "serviceable": True,
+        "reason": "Serviceable"
+    }
+        
 
 # ============================ SHIPPING ESTIMATION (DELHIVERY) ============================
 @app.post("/shipping/delhivery/estimate")
@@ -1451,6 +1487,15 @@ async def calculate_shipping(payload: dict):
     items = payload.get("items", [])
     if not items:
         raise HTTPException(status_code=400, detail="No items in payload")
+    # ---------------- PINCODE SERVICEABILITY CHECK ----------------
+    serviceability = check_pincode_serviceability(str(delivery_pin))
+
+    if not serviceability["serviceable"]:
+        return {
+            "shipping_available": False,
+            "shipping_fee": None,
+            "reason": serviceability["reason"]
+        }    
 
     # ---------------- WEIGHT CALCULATION ----------------
     total_weight = 0.0
