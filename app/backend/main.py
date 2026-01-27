@@ -36,6 +36,38 @@ LICENSE_DIR = os.path.join(BASE_UPLOAD_DIR, "license")
 
 os.makedirs(GST_DIR, exist_ok=True)
 os.makedirs(LICENSE_DIR, exist_ok=True)
+ZONE_LOCAL = "local"
+ZONE_ZONAL = "zonal"
+ZONE_NATIONAL = "national"
+DELHIVERY_SURFACE_RATE_CARD = {
+    ZONE_LOCAL: {
+        "slabs": [
+            (0.5, 45),
+            (1, 65),
+            (5, 95),
+            (10, 120),
+        ],
+        "extra_per_kg": 12
+    },
+    ZONE_ZONAL: {
+        "slabs": [
+            (0.5, 50),
+            (1, 70),
+            (5, 110),
+            (10, 150),
+        ],
+        "extra_per_kg": 15
+    },
+    ZONE_NATIONAL: {
+        "slabs": [
+            (0.5, 60),
+            (1, 85),
+            (5, 130),
+            (10, 180),
+        ],
+        "extra_per_kg": 20
+    }
+}
 
 
 load_dotenv()
@@ -50,7 +82,7 @@ RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
 DELHIVERY_TOKEN = os.getenv("DELHIVERY_TOKEN")  # fallback if not in .env
 DELHIVERY_PICKUP_PIN = os.getenv("DELHIVERY_PICKUP_PIN")
-
+DELHIVERY_BASE_URL = os.getenv("DELHIVERY_BASE_URL", "https://track.delhivery.com")
 razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
 
@@ -1420,8 +1452,21 @@ async def delete_review(
     finally:
         cursor.close()
         conn.close()
+def get_shipping_zone(origin_pin: str, destination_pin: str) -> str:
+    """
+    Very simple zone logic:
+    - Same first 3 digits → Local
+    - Same first 2 digits → Zonal
+    - Else → National
+    """
+    if origin_pin[:3] == destination_pin[:3]:
+        return ZONE_LOCAL
+    elif origin_pin[:2] == destination_pin[:2]:
+        return ZONE_ZONAL
+    else:
+        return ZONE_NATIONAL           
 def check_pincode_serviceability(pincode: str):
-    url = "https://track.delhivery.com/c/api/pin-codes/json/"
+    url = f"{DELHIVERY_BASE_URL}/c/api/pin-codes/json/"  # pincode
     params = {"filter_codes": pincode}
     headers = {"Authorization": f"Token {DELHIVERY_TOKEN}"}
 
@@ -1462,19 +1507,23 @@ def check_pincode_serviceability(pincode: str):
 async def calculate_shipping(payload: dict):
     
     # 1. DEFINE THIS FIRST so it can be used in the 'except' blocks below
-    def calculate_mock_shipping(weight):
+    def calculate_mock_shipping(weight: float, zone: str) -> float:
         """
-        <= 10 kg  -> flat price
-        > 10 kg   -> flat + per kg extra
+        Zone-based slab pricing aligned with Delhivery Surface B2C logic
         """
-        FLAT_PRICE_UPTO_10KG = 120   # ₹
-        EXTRA_PRICE_PER_KG = 15      # ₹ per kg
+        rate_card = DELHIVERY_SURFACE_RATE_CARD.get(zone)
+        if not rate_card:
+            raise ValueError("Invalid shipping zone")
 
-        if weight <= 10:
-            return FLAT_PRICE_UPTO_10KG
-        else:
-            extra_weight = weight - 10
-            return round(FLAT_PRICE_UPTO_10KG + (extra_weight * EXTRA_PRICE_PER_KG), 2)
+        # Slab pricing
+        for slab_weight, price in rate_card["slabs"]:
+            if weight <= slab_weight:
+                return price
+
+        # Incremental pricing after last slab (10 kg)
+        last_slab_weight, last_slab_price = rate_card["slabs"][-1]
+        extra_kg = math.ceil(weight - last_slab_weight)
+        return last_slab_price + (extra_kg * rate_card["extra_per_kg"])
 
     # ---------------- BASIC VALIDATION ----------------
     if not DELHIVERY_TOKEN or not DELHIVERY_PICKUP_PIN:
@@ -1487,7 +1536,7 @@ async def calculate_shipping(payload: dict):
     items = payload.get("items", [])
     if not items:
         raise HTTPException(status_code=400, detail="No items in payload")
-    # ---------------- PINCODE SERVICEABILITY CHECK ----------------
+        
     serviceability = check_pincode_serviceability(str(delivery_pin))
 
     if not serviceability["serviceable"]:
@@ -1495,8 +1544,7 @@ async def calculate_shipping(payload: dict):
             "shipping_available": False,
             "shipping_fee": None,
             "reason": serviceability["reason"]
-        }    
-
+        }
     # ---------------- WEIGHT CALCULATION ----------------
     total_weight = 0.0
     total_vol_weight = 0.0
@@ -1516,15 +1564,23 @@ async def calculate_shipping(payload: dict):
         except Exception:
             raise HTTPException(status_code=400, detail="Invalid item data")
 
-    chargeable_weight = round(max(total_weight, total_vol_weight), 2)
-    if chargeable_weight < 0.5:
-        chargeable_weight = 0.5
-
+     # ---------------- CHARGEABLE WEIGHT (ECOMMERCE STANDARD) ----------------
+    raw_weight = max(total_weight, total_vol_weight)
+         # Delhivery / E-commerce rounding rules
+    if raw_weight <= 0.5:
+              chargeable_weight = 0.5
+    elif raw_weight <= 1:
+                chargeable_weight = 1
+    else:
+          chargeable_weight = math.ceil(raw_weight)  # ALWAYS round UP
     weight_in_grams = int(chargeable_weight * 1000)
-
+   # ----------------- ZONE CALCULATION -----------------
+    zone = get_shipping_zone(
+    str(DELHIVERY_PICKUP_PIN),
+    str(delivery_pin)
+    )
     # ---------------- DELHIVERY API (STAGING) ----------------
-    url = "https://staging-express.delhivery.com/api/kinko/v1/invoice/charges/.json"
-
+    url = f"{DELHIVERY_BASE_URL}/api/kinko/v1/invoice/charges/.json"  
     params = {
         "md": "S", 
         "ss": "Delivered",
@@ -1556,17 +1612,18 @@ async def calculate_shipping(payload: dict):
         else:
             data = res.json()
             # Extract fee from list response
-            if isinstance(data, list) and len(data) > 0:
-                shipping_fee = float(data[0].get("total_amount", 0))
-            
+            if isinstance(data, list) and data:
+                 shipping_fee = float(data[0].get("total_amount", 0))
+            elif isinstance(data, dict):
+                 shipping_fee = float(data.get("charges", {}).get("total_amount", 0))
             # If API returned 0, use mock
             if shipping_fee <= 0:
-                shipping_fee = calculate_mock_shipping(chargeable_weight)
+                shipping_fee = calculate_mock_shipping(chargeable_weight, zone)
                 pricing_source = "mock"
 
     except Exception as e:
         print(f"Exception during API call: {e}")
-        shipping_fee = calculate_mock_shipping(chargeable_weight)
+        shipping_fee = calculate_mock_shipping(chargeable_weight , zone)
         pricing_source = "mock"
         data = {"error": "Connection failed", "details": str(e)}
 
