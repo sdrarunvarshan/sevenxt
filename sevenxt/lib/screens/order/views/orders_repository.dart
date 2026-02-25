@@ -434,6 +434,20 @@ class OrdersRepository {
     final year = date.year;
     return '$day/$month/$year';
   }
+   // Cancel order
+  static Future<bool> cancelOrder(String orderId) async {
+    try {
+      final response = await ApiService.cancelOrder(orderId);
+      if (response['success'] == true) {
+        print('Order $orderId cancelled successfully');
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Error cancelling order: $e');
+      return false;
+    }
+  }
 
   // Delete an order by ID
   static Future<bool> deleteOrder(String orderId) async {
