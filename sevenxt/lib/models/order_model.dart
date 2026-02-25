@@ -6,7 +6,7 @@ class OrderedProduct {
   final String name;
   final String imageUrl;
   final int quantity;
-
+   final String? productId; // 🔥 ADD THIS
   final String colorHex;
   final String hsnCode;
   final double? price;
@@ -31,6 +31,7 @@ class OrderedProduct {
     this.lengthCm,
     this.breadthCm,
     this.heightCm,
+    this.productId, // 🔥 ADD
   });
 
   factory OrderedProduct.fromJson(Map<String, dynamic> json) {
@@ -79,6 +80,8 @@ class OrderedProduct {
       lengthCm: (json['lengthCm'] as num?)?.toDouble(),
       breadthCm: (json['breadthCm'] as num?)?.toDouble(),
       heightCm: (json['heightCm'] as num?)?.toDouble(),
+      productId: json['product_id']?.toString() ??
+          json['id']?.toString(), // 🔥 ADD THIS
     );
   }
 }
