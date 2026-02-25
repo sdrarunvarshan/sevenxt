@@ -1956,6 +1956,82 @@ async def get_orders_by_user(
     finally:
         cursor.close()
         conn.close()
+ @app.post("/orders/{order_id}/cancel")
+async def cancel_order(
+    order_id: str,
+    current_user_id: str = Depends(get_current_user)
+):
+    """
+    Cancels an order, restores stock, and updates status to 'Cancelled'.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    
+    try:
+        # 1. Fetch the order and verify ownership
+        cursor.execute("""
+            SELECT id, status, products, customer 
+            FROM orders 
+            WHERE order_id = %s AND customer = %s
+        """, (order_id, current_user_id))
+        order = cursor.fetchone()
+        
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found or not owned by user")
+        
+        # 2. Check if already cancelled or already in a state that cannot be cancelled
+        current_status = order["status"].lower()
+        if current_status == "cancelled":
+             raise HTTPException(status_code=400, detail="Order is already cancelled")
+             
+        # Only allow cancellation for Pending or Ordered (Adjust status names if needed)
+        if current_status not in ["pending", "ordered"]:
+             raise HTTPException(status_code=400, detail=f"Order cannot be cancelled in state: {order['status']}")
+             
+        # 3. Restore stock
+        import json
+        products_data = order.get('products')
+        items = []
+        if isinstance(products_data, str):
+            try:
+                items = json.loads(products_data)
+            except:
+                items = []
+        elif isinstance(products_data, list):
+            items = products_data
+            
+        for item in items:
+            p_id = item.get('product_id')
+            qty = item.get('quantity', 0)
+            if p_id and qty > 0:
+                cursor.execute("""
+                    UPDATE products 
+                    SET stock = stock + %s 
+                    WHERE id = %s
+                """, (qty, p_id))
+        
+        # 4. Update order status
+        cursor.execute("""
+            UPDATE orders 
+            SET status = 'Cancelled' 
+            WHERE order_id = %s
+        """, (order_id,))
+        
+        conn.commit()
+        return {"success": True, "message": "Order cancelled successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"Error cancelling order: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to cancel order: {str(e)}")
+    finally:
+        cursor.close()
+        conn.close()       
 # ============================ RETURN REQUESTS ============================
 @app.post("/returns/refund")
 async def create_refund(
