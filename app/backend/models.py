@@ -81,6 +81,7 @@ class B2CRegister(BaseModel):
     
 class OrderedProductBase(BaseModel):
     order_item_id: Optional[int] = None 
+    product_id: Optional[str] = None  # 🔥 ADD THIS
     name: str
     price: float
     imageUrl: str
