@@ -195,6 +195,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       ),
     );
   }
+  
 
   Widget _summaryCard(Order order) {
     return Card(
@@ -227,8 +228,86 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
             OrderStatusBadge(status: order.orderStatus),
           ],
         ),
+          _cancelOrderButton(order),
       ]),
     ));
+  }
+  Widget _cancelOrderButton(Order order) {
+    // Only allow cancellation if status is ordered/pending
+    final bool canCancel = order.orderStatus == OrderProcessStatus.ordered;
+
+    if (!canCancel) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: defaultPadding),
+      child: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton(
+          onPressed: () => _showCancelConfirmation(context, order),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.red,
+            side: const BorderSide(color: Colors.red),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(defaultBorderRadious * 2),
+            ),
+          ),
+          child: const Text(
+            "Cancel Order",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+      ),
+    );
+  }
+  void _showCancelConfirmation(BuildContext context, Order order) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Cancel Order"),
+        content: const Text(
+            "Are you sure you want to cancel this order? This action cannot be undone."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Keep Order"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _handleCancelOrder(order);
+            },
+            child:
+                const Text("Cancel Order", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+  Future<void> _handleCancelOrder(Order order) async {
+    setState(() => _isLoading = true);
+    try {
+      final success = await OrdersRepository.cancelOrder(order.id);
+      if (success) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Order cancelled successfully")),
+        );
+        _loadOrder(); // Reload to reflect changes
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to cancel order")),
+        );
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+    }
   }
 
   Widget _addressCard(Order order) => Card(
