@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:sevenxt/constants.dart';
 import 'package:sevenxt/models/order_model.dart';
 import 'package:sevenxt/route/route_constants.dart';
+import 'package:sevenxt/screens/order/views/orders_repository.dart';
 
 import '../../product/views/components/selected_colors.dart';
 
@@ -261,6 +262,17 @@ class OrderConfirmationScreen extends StatelessWidget {
                     ),
                   ),
                 ),
+                const SizedBox(height: defaultPadding),
+// Cancellation Option
+                TextButton(
+                  onPressed: () => _showCancelConfirmation(context, order),
+                  child: const Text(
+                    'Placed wrongly? Cancel Order',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+                const SizedBox(height: defaultPadding * 2),
+
                 const SizedBox(height: defaultPadding * 2),
               ],
             ),
@@ -399,9 +411,74 @@ class OrderConfirmationScreen extends StatelessWidget {
         return Colors.orange;
       case 'failed':
       case 'canceled':
+      case 'cancelled': // Added this case
         return Colors.red;
       default:
         return Colors.blue;
+    }
+  }
+}
+
+void _showCancelConfirmation(BuildContext context, Order order) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text("Cancel Order"),
+      content: const Text(
+          "Are you sure you want to cancel this order? This action cannot be undone."),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Keep Order"),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+            _handleCancelOrder(context, order);
+          },
+          child:
+              const Text("Cancel Order", style: TextStyle(color: Colors.red)),
+        ),
+      ],
+    ),
+  );
+}
+
+Future<void> _handleCancelOrder(BuildContext context, Order order) async {
+  // Show Loading
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => const Center(child: CircularProgressIndicator()),
+  );
+
+  try {
+    final success = await OrdersRepository.cancelOrder(order.id);
+    Navigator.pop(context); // Remove loading
+
+    if (success) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Order cancelled successfully")),
+      );
+      // Navigate back to home
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        entryPointScreenRoute,
+        (route) => false,
+      );
+    } else {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to cancel order")),
+      );
+    }
+  } catch (e) {
+    if (context.mounted) {
+      Navigator.pop(context); // Remove loading if still there
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
     }
   }
 }
