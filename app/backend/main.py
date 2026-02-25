@@ -1754,7 +1754,17 @@ async def place_order_from_app(order_data: OrderCreate, current_user_id: str = D
         # 4. Update orders row with real JSON
         cursor.execute("UPDATE orders SET products=%s WHERE id=%s", (items_json_string, db_order_id))
 
-        # 5. Commit transaction
+        # 5. Decrement Stock for each product
+        for product in order_data.products:
+            if product.product_id:
+                cursor.execute("""
+                    UPDATE products 
+                    SET stock = GREATEST(0, stock - %s) 
+                    WHERE id = %s
+                """, (product.quantity, product.product_id))
+
+
+        # 6. Commit transaction
         conn.commit()
 
         return {
