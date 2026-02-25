@@ -269,6 +269,8 @@ class OrdersRepository {
             lengthCm: (item['lengthCm'] as num?)?.toDouble(),
             breadthCm: (item['breadthCm'] as num?)?.toDouble(),
             heightCm: (item['heightCm'] as num?)?.toDouble(),
+            productId: item['product_id']?.toString() ??
+                item['id']?.toString(),
           );
         }).toList();
       }
