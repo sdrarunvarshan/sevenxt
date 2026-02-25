@@ -593,6 +593,24 @@ class ApiService {
       rethrow;
     }
   }
+  static Future<Map<String, dynamic>> cancelOrder(String orderId) async {
+    try {
+      final String tokenToUse = token ?? await _getAuthToken();
+      final response = await http.post(
+        Uri.parse('$baseUrl/orders/$orderId/cancel'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $tokenToUse',
+        },
+      );
+
+      return _handleResponse(response);
+    } catch (e) {
+      print('ApiService: Error cancelling order: $e');
+      rethrow;
+    }
+  }
+
 
   // ================= OTP SERVICES =================
 
