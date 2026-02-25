@@ -610,6 +610,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           lengthCm: item.product.lengthCm,
           breadthCm: item.product.breadthCm,
           heightCm: item.product.heightCm,
+          productId: item.product.id,
         );
       }).toList();
 
