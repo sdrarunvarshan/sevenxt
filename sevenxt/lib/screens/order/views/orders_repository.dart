@@ -385,6 +385,7 @@ class OrdersRepository {
           'lengthCm': product.lengthCm,
           'breadthCm': product.breadthCm,
           'heightCm': product.heightCm,
+          'product_id': product.productId, // 🔥 ADD THIS
         }).toList(),
         'total_price': order.totalPrice,
         'address': order.customerAddressText,
