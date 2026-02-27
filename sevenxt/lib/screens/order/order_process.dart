@@ -29,8 +29,8 @@ extension OrderProcessStatusExtension on OrderProcessStatus {
       case OrderProcessStatus.delivered: return "Delivered";
       case OrderProcessStatus.failed: return "Failed";
       case OrderProcessStatus.cancelled: return "Cancelled";
-      case OrderProcessStatus.rto: return "Return Requested";
-      case OrderProcessStatus.rtoDelivered: return "Returned";
+      case OrderProcessStatus.rto: return "Issued";
+      case OrderProcessStatus.rtoDelivered: return "Processed";
       case OrderProcessStatus.pending: return "Pending";
       default: return "Unknown";
     }
