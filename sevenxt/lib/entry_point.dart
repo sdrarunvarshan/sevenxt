@@ -1,4 +1,4 @@
-import 'dart:async'; // NEW: For Timer
+import 'dart:async';
 
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
@@ -17,31 +17,28 @@ import 'package:sevenxt/screens/profile/views/profile_screen.dart';
 import '/screens/helpers/user_helper.dart';
 
 class EntryPoint extends StatefulWidget {
-  // Add an optional initial index parameter
   final int initialIndex;
 
-  const EntryPoint(
-      {super.key, this.initialIndex = 0}); // Default to 0 (HomeScreen)
+  const EntryPoint({super.key, this.initialIndex = 0});
 
   @override
   State<EntryPoint> createState() => _EntryPointState();
 }
 
 class _EntryPointState extends State<EntryPoint> {
-  late int _currentIndex; // Use late initialization
+  late int _currentIndex;
   Timer? _approvalTimer;
 
-  final List<Widget> _pages = const [
+  final List<Widget> _pages = [
     HomeScreen(),
     DiscoverScreen(),
-    CartScreen(),
+    CartScreen(isTab: true, showBackButton: false),
     ProfileScreen(),
   ];
 
   @override
   void initState() {
     super.initState();
-    // Initialize _currentIndex with the value from the widget's constructor
     final savedIndex = Hive.box('user_settings')
         .get('last_tab_index', defaultValue: widget.initialIndex);
     _currentIndex = savedIndex;
@@ -50,21 +47,19 @@ class _EntryPointState extends State<EntryPoint> {
 
   void _startApprovalPolling() async {
     final userType = await UserHelper.getUserType();
-    if (userType != UserHelper.b2b) return; // Only for B2B
+    if (userType != UserHelper.b2b) return;
 
     _approvalTimer = Timer.periodic(const Duration(minutes: 5), (timer) async {
       final isApproved = await _checkApproval();
 
-      // Ensure we are still in the tree and not in the middle of a build
       if (!mounted) return;
 
       if (isApproved) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Your B2B account has been approved!')),
         );
-        timer.cancel(); // Stop polling once approved
+        timer.cancel();
       } else {
-        // Use Future.delayed to ensure navigation happens after any current build cycle
         Future.delayed(Duration.zero, () {
           if (mounted) {
             Navigator.pushReplacementNamed(context, b2bApprovalPendingRoute);
@@ -90,11 +85,10 @@ class _EntryPointState extends State<EntryPoint> {
 
   @override
   void dispose() {
-    _approvalTimer?.cancel(); // Clean up timer
+    _approvalTimer?.cancel();
     super.dispose();
   }
 
-  // Helper function for SVG icons
   SvgPicture svgIcon(String src, {Color? color}) {
     return SvgPicture.asset(
       src,
@@ -114,17 +108,12 @@ class _EntryPointState extends State<EntryPoint> {
     return Consumer<GuestService>(
       builder: (context, guestService, child) {
         final bool isGuest = guestService.isGuest;
-
-        const int discoverIndex = 1;
         const int cartIndex = 2;
-        const int profileIndex = 3;
 
-        // PopScope handles the back button behavior
         return PopScope(
-          canPop: _currentIndex == 0, // Allow exit only if on Home tab
+          canPop: _currentIndex == 0,
           onPopInvoked: (didPop) {
             if (didPop) return;
-            // If not on Home tab, switch to Home tab
             setState(() {
               _currentIndex = 0;
             });
@@ -135,11 +124,13 @@ class _EntryPointState extends State<EntryPoint> {
               leading: const SizedBox(),
               leadingWidth: 0,
               centerTitle: false,
-              title: SvgPicture.asset(
-                "assets/logo/sevenxt.svg",
-                height: 85,
-                width: 120,
-              ),
+              title: _currentIndex == cartIndex
+                  ? const Text('Cart')
+                  : SvgPicture.asset(
+                      "assets/logo/sevenxt.svg",
+                      height: 85,
+                      width: 120,
+                    ),
               actions: [
                 IconButton(
                   onPressed: () {
@@ -157,7 +148,6 @@ class _EntryPointState extends State<EntryPoint> {
                 IconButton(
                     onPressed: () {
                       Navigator.pushNamed(context, notificationScreenRoute);
-                      // Handle notification tap
                     },
                     icon: SvgPicture.asset(
                       "assets/icons/notification.svg",
@@ -189,18 +179,8 @@ class _EntryPointState extends State<EntryPoint> {
                 currentIndex: _currentIndex,
                 onTap: (index) {
                   if (isGuest &&
-                      (index == discoverIndex ||
-                          index == cartIndex ||
-                          index == profileIndex)) {
+                      (index == 1 || index == 2 || index == 3)) {
                     Navigator.pushNamed(context, logInScreenRoute);
-                  } else if (index == cartIndex) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            const CartScreen(showBackButton: false),
-                      ),
-                    );
                   } else if (index != _currentIndex) {
                     setState(() {
                       _currentIndex = index;
