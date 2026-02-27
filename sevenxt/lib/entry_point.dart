@@ -124,13 +124,11 @@ class _EntryPointState extends State<EntryPoint> {
               leading: const SizedBox(),
               leadingWidth: 0,
               centerTitle: false,
-              title: _currentIndex == cartIndex
-                  ? const Text('Cart')
-                  : SvgPicture.asset(
-                      "assets/logo/sevenxt.svg",
-                      height: 85,
-                      width: 120,
-                    ),
+              title: SvgPicture.asset(
+              "assets/logo/sevenxt.svg",
+              height: 85,
+              width: 120,
+              ),
               actions: [
                 IconButton(
                   onPressed: () {
