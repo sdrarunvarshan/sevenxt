@@ -1746,6 +1746,7 @@ async def place_order_from_app(order_data: OrderCreate, current_user_id: str = D
                 "price": product.price,
                 "quantity": product.quantity,
                 "item_total": product.price * product.quantity,
+                "product_id": product.product_id,
             })
 
         # 3. Build products JSON
@@ -1877,7 +1878,8 @@ async def get_orders_by_user(
                                 'weightKg': float(product_dict.get('weightKg', 0)),
                                 'lengthCm': float(product_dict.get('lengthCm', 0)),
                                 'breadthCm': float(product_dict.get('breadthCm', 0)),
-                                'heightCm': float(product_dict.get('heightCm', 0))
+                                'heightCm': float(product_dict.get('heightCm', 0)),
+                                'product_id': product_dict.get('product_id')
                             })
                             
                         except Exception as e:
@@ -1956,7 +1958,7 @@ async def get_orders_by_user(
     finally:
         cursor.close()
         conn.close()
- @app.post("/orders/{order_id}/cancel")
+@app.post("/orders/{order_id}/cancel")
 async def cancel_order(
     order_id: str,
     current_user_id: str = Depends(get_current_user)
@@ -1991,24 +1993,50 @@ async def cancel_order(
         # 3. Restore stock
         import json
         products_data = order.get('products')
+        print(f"DEBUG: order['products'] type: {type(products_data)}")
+        print(f"DEBUG: order['products'] content: {products_data}")
+        
         items = []
         if isinstance(products_data, str):
             try:
-                items = json.loads(products_data)
-            except:
+                cleaned = products_data.strip()
+                if cleaned.startswith('"[') and cleaned.endswith(']"'):
+                    inner = cleaned[1:-1].replace('\\"', '"')
+                    items = json.loads(inner)
+                else:
+                    items = json.loads(cleaned)
+            except Exception as e:
+                print(f"DEBUG: JSON parse error: {e}")
                 items = []
         elif isinstance(products_data, list):
             items = products_data
             
+        print(f"DEBUG: items to restore: {items}")
         for item in items:
-            p_id = item.get('product_id')
-            qty = item.get('quantity', 0)
+            # Handle item being a string or dict
+            product_dict = {}
+            if isinstance(item, str):
+                try:
+                    product_dict = json.loads(item)
+                except:
+                    print(f"DEBUG: Could not parse item string: {item}")
+                    continue
+            else:
+                product_dict = item
+
+            p_id = product_dict.get('product_id')
+            qty = product_dict.get('quantity', 0)
+            print(f"DEBUG: Restoring product_id={p_id}, quantity={qty}")
+            
             if p_id and qty > 0:
                 cursor.execute("""
                     UPDATE products 
                     SET stock = stock + %s 
                     WHERE id = %s
                 """, (qty, p_id))
+                print(f"DEBUG: Executed update for product {p_id}")
+            else:
+                print(f"DEBUG: Skipping restoration for product {p_id} due to missing ID or zero qty")
         
         # 4. Update order status
         cursor.execute("""
@@ -2016,6 +2044,7 @@ async def cancel_order(
             SET status = 'Cancelled' 
             WHERE order_id = %s
         """, (order_id,))
+        print(f"DEBUG: Updated order status to Cancelled for {order_id}")
         
         conn.commit()
         return {"success": True, "message": "Order cancelled successfully"}
@@ -2031,7 +2060,7 @@ async def cancel_order(
         raise HTTPException(status_code=500, detail=f"Failed to cancel order: {str(e)}")
     finally:
         cursor.close()
-        conn.close()       
+        conn.close()      
 # ============================ RETURN REQUESTS ============================
 @app.post("/returns/refund")
 async def create_refund(
