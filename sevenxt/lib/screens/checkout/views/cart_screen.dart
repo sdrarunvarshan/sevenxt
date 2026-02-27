@@ -12,8 +12,15 @@ import '../../helpers/user_helper.dart';
 
 class CartScreen extends StatefulWidget {
   final bool showBackButton;
+  final bool isTab;
   final String? userType;
-  const CartScreen({super.key, this.showBackButton = true, this.userType});
+  
+  const CartScreen({
+    super.key,
+    this.showBackButton = true,
+    this.isTab = false,
+    this.userType
+  });
 
   @override
   State<CartScreen> createState() => _CartScreenState();
@@ -32,7 +39,6 @@ class _CartScreenState extends State<CartScreen> {
   void initState() {
     super.initState();
     _initCartScreen();
-    // fallback
     _fetchDefaultAddress();
   }
 
@@ -40,11 +46,11 @@ class _CartScreenState extends State<CartScreen> {
     if (widget.userType != null) {
       _resolvedUserType = widget.userType!;
       print(
-          'CartScreen: _resolvedUserType from widget: $_resolvedUserType'); // ADDED PRINT
+          'CartScreen: _resolvedUserType from widget: $_resolvedUserType');
     } else {
       _resolvedUserType = await UserHelper.getUserType();
       print(
-          'CartScreen: _resolvedUserType from UserHelper: $_resolvedUserType'); // ADDED PRINT
+          'CartScreen: _resolvedUserType from UserHelper: $_resolvedUserType');
     }
 
     if (!mounted) return;
@@ -69,9 +75,7 @@ class _CartScreenState extends State<CartScreen> {
           _selectedAddress = Address.fromJson(defaultAddress);
           _isLoadingAddress = false;
         });
-        // *** FIX START: Calculate shipping fee when default address is loaded ***
         _calculateShipping();
-        // *** FIX END ***
       } else {
         setState(() {
           _selectedAddress = null;
@@ -137,7 +141,6 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Widget _buildAddressSection() {
-    // Show skeleton while loading
     if (_isLoadingAddress) {
       return Padding(
         padding: const EdgeInsets.all(defaultPadding),
@@ -145,7 +148,6 @@ class _CartScreenState extends State<CartScreen> {
       );
     }
 
-    // Show "no address" state
     if (_selectedAddress == null) {
       return Padding(
         padding: const EdgeInsets.all(defaultPadding),
@@ -180,7 +182,6 @@ class _CartScreenState extends State<CartScreen> {
       );
     }
 
-    // Show selected address
     return Padding(
       padding: const EdgeInsets.all(defaultPadding),
       child: Column(
@@ -305,7 +306,6 @@ class _CartScreenState extends State<CartScreen> {
       print("Shipping error: $e");
     }
   }
-  // ------------------ HIVE SNAPSHOT HELPERS ------------------
 
   bool _isCheckingStatus = false;
 
@@ -331,23 +331,18 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
-    // --- START B2B RESTRICTION CHECK ---
     setState(() => _isCheckingStatus = true);
 
     try {
-      // Ensure we have the latest user type
       final userType = await UserHelper.getUserType();
 
       if (userType == UserHelper.b2b) {
         try {
-          // Fetch profile to check status
           final profile = await ApiService.getUserProfile();
-          print("B2B Profile Check: $profile"); // For debugging
+          print("B2B Profile Check: $profile");
 
-          // Backend status values: approved, rejected, pending, suspended
           final status = profile['status']?.toString().toLowerCase();
 
-          // Only 'approved' status is allowed to proceed
           if (status != 'approved') {
             if (mounted) {
               String message = "Your B2B account is ";
@@ -369,10 +364,9 @@ class _CartScreenState extends State<CartScreen> {
                 ),
               );
             }
-            return; // STOP execution
+            return;
           }
         } catch (e) {
-          // If profile fetch fails (e.g. 403 Forbidden), treat as restricted
           print("B2B Check Error: $e");
           String errorMessage = "Could not verify B2C/B2B status.";
           if (e.toString().contains("403")) {
@@ -387,17 +381,15 @@ class _CartScreenState extends State<CartScreen> {
               ),
             );
           }
-          return; // STOP execution
+          return;
         }
       }
     } finally {
       if (mounted) setState(() => _isCheckingStatus = false);
     }
-    // --- END B2B RESTRICTION CHECK ---
 
     if (!mounted) return;
 
-    // Navigate to Payment Screen
     Navigator.pushNamed(
       context,
       paymentScreenRoute,
@@ -426,7 +418,6 @@ class _CartScreenState extends State<CartScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Logic: Calculate subtotal and GST
     final gstMap = _calculateTotalGST();
     final double stateGstTotal = gstMap['state_gst'] ?? 0.0;
     final double centralGstTotal = gstMap['central_gst'] ?? 0.0;
@@ -440,12 +431,13 @@ class _CartScreenState extends State<CartScreen> {
     double grandTotal = subtotal + totalGst + _shippingFee;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cart'),
-        centerTitle: true,
-        leading: widget.showBackButton ? const BackButton() : null,
-      ),
-      // --- BODY SECTION ---
+      appBar: widget.isTab
+          ? null
+          : AppBar(
+              title: const Text('Cart'),
+              centerTitle: true,
+              leading: widget.showBackButton ? const BackButton() : null,
+            ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1200),
@@ -530,7 +522,6 @@ class _CartScreenState extends State<CartScreen> {
                         },
                       ),
               ),
-              // Order Summary remains in the scrollable/column area
               if (_cart.items.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.all(defaultPadding),
@@ -549,11 +540,9 @@ class _CartScreenState extends State<CartScreen> {
           ),
         ),
       ),
-      // --- CORRECT PLACEMENT OF bottomNavigationBar ---
       bottomNavigationBar: _cart.items.isNotEmpty
           ? LayoutBuilder(
               builder: (context, constraints) {
-                // Calculate horizontal padding if the screen is wider than 1200
                 double horizontalPadding = 0;
                 if (constraints.maxWidth > 1200) {
                   horizontalPadding = (constraints.maxWidth - 1200) / 2;
@@ -561,7 +550,6 @@ class _CartScreenState extends State<CartScreen> {
 
                 return SafeArea(
                   child: Padding(
-                    // Apply the calculated padding + your default padding
                     padding: EdgeInsets.symmetric(
                       horizontal: horizontalPadding + defaultPadding,
                       vertical: defaultPadding,
@@ -580,7 +568,6 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  // Helper widgets to keep the build method clean
   Widget _buildSummaryRow(String label, double value, {bool isBold = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: defaultPadding / 8),
