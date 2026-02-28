@@ -57,7 +57,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                   'Your order has been confirmed and will be shipped soon',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.grey,
+                        color: blackColor40,
                       ),
                 ),
                 const SizedBox(height: defaultPadding * 2),
@@ -69,9 +69,9 @@ class OrderConfirmationScreen extends StatelessWidget {
                     vertical: defaultPadding / 2,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
+                    color: kSurfaceColor,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.grey.shade200),
+                    border: Border.all(color: borderColor),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -136,14 +136,14 @@ class OrderConfirmationScreen extends StatelessWidget {
                                           )
                                         : null,
                                     color: product.imageUrl.isEmpty
-                                        ? Colors.grey.shade100
+                                        ? blackColor5
                                         : null,
                                   ),
                                   child: product.imageUrl.isEmpty
                                       ? Center(
                                           child: Icon(
                                             Icons.shopping_bag,
-                                            color: Colors.grey.shade400,
+                                            color: blackColor40,
                                             size: 30,
                                           ),
                                         )
@@ -175,7 +175,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                                               borderRadius:
                                                   BorderRadius.circular(4),
                                               border: Border.all(
-                                                  color: Colors.grey.shade300),
+                                                  color: blackColor20),
                                             ),
                                           ),
                                           const SizedBox(width: 8),
@@ -295,7 +295,7 @@ class OrderConfirmationScreen extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: Theme.of(context).scaffoldBackgroundColor,
-              border: Border(top: BorderSide(color: Colors.grey.shade200)),
+              border: Border(top: BorderSide(color: borderColor)),
             ),
             child: Row(
               children: [
@@ -364,7 +364,7 @@ class OrderConfirmationScreen extends StatelessWidget {
             child: Text(
               title,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey,
+                    color: blackColor40,
                   ),
             ),
           ),

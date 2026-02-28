@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../constants.dart';
 import '../network_image_with_loader.dart';
 
@@ -66,7 +67,8 @@ class SecondaryProductCard extends StatelessWidget {
                           right: 4,
                           top: 4,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4, vertical: 2),
                             decoration: BoxDecoration(
                               color: errorColor,
                               borderRadius: BorderRadius.circular(4),
@@ -89,76 +91,78 @@ class SecondaryProductCard extends StatelessWidget {
 
               /// CONTENT
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      brandName.toUpperCase(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium!
-                          .copyWith(fontSize: 10, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            height: 1.2,
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    if (rating != null)
-                      Row(
-                        children: [
-                          const Icon(Icons.star, size: 12, color: Colors.amber),
-                          const SizedBox(width: 4),
-                          Text(
-                            rating!.toStringAsFixed(1),
-                            style: const TextStyle(
-                                fontSize: 10, fontWeight: FontWeight.bold),
-                          ),
-                        ],
+                child: SingleChildScrollView(
+                  physics: const NeverScrollableScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        brandName.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall!
+                            .copyWith(fontSize: 10, color: blackColor40),
                       ),
+                      const SizedBox(height: 1),
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              height: 1.2,
+                            ),
+                      ),
+                      const SizedBox(height: 2),
+                      if (rating != null)
+                        Row(
+                          children: [
+                            Icon(Icons.star, size: 10, color: warningColor),
+                            const SizedBox(width: 2),
+                            Text(
+                              rating!.toStringAsFixed(1),
+                              style: const TextStyle(
+                                  fontSize: 9, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
 
-
-                    /// PRICE
-                    const SizedBox(height: 4),
-                    Flexible(
-                      child: Column(
+                      /// PRICE
+                      const SizedBox(height: 2),
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.max,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           if (priceAfetDiscount != null &&
                               priceAfetDiscount! < price)
                             Text(
                               "₹${price.toStringAsFixed(0)}",
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 9,
-                                color: Colors.grey,
+                                color: blackColor40,
                                 decoration: TextDecoration.lineThrough,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           Text(
                             "₹${(priceAfetDiscount ?? price).toStringAsFixed(0)}",
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: Colors.lightBlue,
+                              color: kPrimaryColor,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+              )
             ],
           ),
         ),

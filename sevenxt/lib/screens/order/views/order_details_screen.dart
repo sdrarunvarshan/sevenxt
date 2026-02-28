@@ -245,8 +245,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         child: OutlinedButton(
           onPressed: () => _showCancelConfirmation(context, order),
           style: OutlinedButton.styleFrom(
-            foregroundColor: Colors.red,
-            side: const BorderSide(color: Colors.red),
+            foregroundColor: errorColor,
+            side: BorderSide(color: errorColor),
             padding: const EdgeInsets.symmetric(vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(defaultBorderRadious * 2),
@@ -278,7 +278,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               _handleCancelOrder(order);
             },
             child:
-                const Text("Cancel Order", style: TextStyle(color: Colors.red)),
+                const Text("Cancel Order", style: TextStyle(color: errorColor)),
           ),
         ],
       ),

@@ -184,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 decoration: BoxDecoration(
                                   color: isB2CSelected
                                       ? Theme.of(context).primaryColor
-                                      : Colors.grey.shade300,
+                                      : blackColor20,
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Column(
@@ -195,7 +195,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       style: TextStyle(
                                         color: isB2CSelected
                                             ? Colors.white
-                                            : Colors.grey.shade700,
+                                            : blackColor60,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -206,7 +206,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                           "(Not available)",
                                           style: TextStyle(
                                             fontSize: 10,
-                                            color: Colors.red,
+                                            color: errorColor,
                                           ),
                                         ),
                                       ),
@@ -227,7 +227,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 decoration: BoxDecoration(
                                   color: !isB2CSelected
                                       ? Theme.of(context).primaryColor
-                                      : Colors.grey.shade300,
+                                      : blackColor20,
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Column(
@@ -238,7 +238,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       style: TextStyle(
                                         color: !isB2CSelected
                                             ? Colors.white
-                                            : Colors.grey.shade700,
+                                            : blackColor60,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -249,7 +249,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                           "(Not available)",
                                           style: TextStyle(
                                             fontSize: 10,
-                                            color: Colors.red,
+                                            color: errorColor,
                                           ),
                                         ),
                                       ),
@@ -269,7 +269,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           return Stack(
                             children: [
-                              Container(height: 3, color: Colors.grey.shade300),
+                              Container(height: 3, color: blackColor20),
                               AnimatedPositioned(
                                 duration: const Duration(milliseconds: 300),
                                 left: isB2CSelected ? 0 : tabWidth,

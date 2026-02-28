@@ -123,21 +123,21 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
         if (_userType != null)
           Container(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            color: Colors.blue.withOpacity(0.1),
+            color: kPrimaryColor.withOpacity(0.1),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Icon(
                   Icons.shopping_bag,
                   size: 16,
-                  color: Colors.blue,
+                  color: kPrimaryColor,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   '${products.length} products found',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue,
+                    color: kPrimaryColor,
                   ),
                 ),
               ],
@@ -246,7 +246,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                                               product.brandName.toUpperCase(),
                                               style: TextStyle(
                                                 fontSize: 9,
-                                                color: Colors.grey[600],
+                                                color: greyColor,
                                                 fontWeight: FontWeight.w500,
                                                 letterSpacing: 0.5,
                                               ),
@@ -259,7 +259,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                                             style: TextStyle(
                                               fontWeight: FontWeight.w600,
                                               fontSize: 12,
-                                              color: Colors.grey[800],
+                                              color: greyColor,
                                             ),
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
@@ -290,7 +290,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                                                   '(${product.reviews})',
                                                   style: const TextStyle(
                                                     fontSize: 10,
-                                                    color: Colors.grey,
+                                                    color: greyColor,
                                                   ),
                                                 ),
                                               ],
@@ -307,7 +307,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                                                   '₹${product.price.toStringAsFixed(0)}',
                                                   style: const TextStyle(
                                                     fontSize: 10,
-                                                    color: Colors.grey,
+                                                    color: greyColor,
                                                     decoration: TextDecoration
                                                         .lineThrough,
                                                   ),
@@ -317,7 +317,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                                                 style: const TextStyle(
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 14,
-                                                  color: Colors.blue,
+                                                  color: kPrimaryColor,
                                                 ),
                                               ),
                                             ],
@@ -362,21 +362,19 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
             const Icon(
               Icons.sentiment_dissatisfied_outlined,
               size: 64,
-              color: Colors.grey,
+              color: greyColor,
             ),
             const SizedBox(height: 16),
             Text(
               'No products found in "${widget.categoryName}"!',
               style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey),
+                  fontSize: 18, fontWeight: FontWeight.w500, color: greyColor),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             const Text(
               'Try refreshing or check another category.',
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: greyColor),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -404,7 +402,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 48),
+            const Icon(Icons.error_outline, color: errorColor, size: 48),
             const SizedBox(height: 16),
             Text(
               message,
@@ -414,7 +412,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
             if (errorDetails != null) ...[
               const SizedBox(height: 8),
               Text(errorDetails,
-                  style: const TextStyle(color: Colors.grey),
+                  style: const TextStyle(color: greyColor),
                   textAlign: TextAlign.center),
             ],
             const SizedBox(height: 24),

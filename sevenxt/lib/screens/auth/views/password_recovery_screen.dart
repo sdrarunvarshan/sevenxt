@@ -55,7 +55,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(response['message'] ?? 'Failed to send OTP'),
-              backgroundColor: Colors.red,
+              backgroundColor: errorColor,
             ),
           );
         }
@@ -90,7 +90,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
             const SnackBar(
               content: Text(
                   'Phone verified successfully. Please set your new password.'),
-              backgroundColor: Colors.green,
+              backgroundColor: successColor,
             ),
           );
         }
@@ -100,7 +100,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: errorColor,
           ),
         );
       }
@@ -142,7 +142,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Password reset successful. Please login again.'),
-          backgroundColor: Colors.green,
+          backgroundColor: successColor,
         ),
       );
 
@@ -236,13 +236,13 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
         Container(
           height: 2,
           width: 40,
-          color: _currentStep >= 3 ? kPrimaryColor : Colors.grey.shade300,
+          color: _currentStep >= 3 ? kPrimaryColor : blackColor20,
         ),
         _buildStepCircle(2, 'Verify', _currentStep >= 3),
         Container(
           height: 2,
           width: 40,
-          color: _currentStep >= 3 ? kPrimaryColor : Colors.grey.shade300,
+          color: _currentStep >= 3 ? kPrimaryColor : blackColor20,
         ),
         _buildStepCircle(3, 'Reset', _currentStep >= 3),
       ],
@@ -254,11 +254,11 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
       children: [
         CircleAvatar(
           radius: 16,
-          backgroundColor: active ? kPrimaryColor : Colors.grey.shade300,
+          backgroundColor: active ? kPrimaryColor : blackColor20,
           child: Text(
             '$step',
             style: TextStyle(
-              color: active ? Colors.white : Colors.grey.shade600,
+              color: active ? Colors.white : blackColor60,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -267,7 +267,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
         Text(
           label,
           style: TextStyle(
-            color: active ? kPrimaryColor : Colors.grey.shade600,
+            color: active ? kPrimaryColor : blackColor60,
             fontSize: 12,
           ),
         ),
@@ -302,7 +302,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
         const SizedBox(height: defaultPadding),
         const Text(
           'We will send a verification code to this number',
-          style: TextStyle(color: Colors.grey, fontSize: 12),
+          style: TextStyle(color: blackColor40, fontSize: 12),
         ),
         const SizedBox(height: defaultPadding),
         SizedBox(
@@ -337,13 +337,13 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.green.shade50,
+            color: successColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.green.shade200),
+            border: Border.all(color: successColor.withOpacity(0.3)),
           ),
           child: Row(
             children: [
-              Icon(Icons.verified, color: Colors.green.shade700),
+              Icon(Icons.verified, color: successColor),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
@@ -408,7 +408,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.grey.shade100,
+            color: blackColor5,
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Column(
@@ -421,7 +421,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
               SizedBox(height: 4),
               Text(
                 '• At least 8 characters\n• Not too common\n• Not similar to phone number',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
+                style: TextStyle(fontSize: 11, color: blackColor40),
               ),
             ],
           ),

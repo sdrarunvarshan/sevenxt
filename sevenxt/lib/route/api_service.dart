@@ -593,6 +593,7 @@ class ApiService {
       rethrow;
     }
   }
+
   static Future<Map<String, dynamic>> cancelOrder(String orderId) async {
     try {
       final String tokenToUse = token ?? await _getAuthToken();
@@ -610,7 +611,6 @@ class ApiService {
       rethrow;
     }
   }
-
 
   // ================= OTP SERVICES =================
 

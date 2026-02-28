@@ -125,9 +125,9 @@ class _EntryPointState extends State<EntryPoint> {
               leadingWidth: 0,
               centerTitle: false,
               title: SvgPicture.asset(
-              "assets/logo/sevenxt.svg",
-              height: 85,
-              width: 120,
+                "assets/logo/sevenxt.svg",
+                height: 85,
+                width: 120,
               ),
               actions: [
                 IconButton(
@@ -176,8 +176,7 @@ class _EntryPointState extends State<EntryPoint> {
               child: BottomNavigationBar(
                 currentIndex: _currentIndex,
                 onTap: (index) {
-                  if (isGuest &&
-                      (index == 1 || index == 2 || index == 3)) {
+                  if (isGuest && (index == 1 || index == 2 || index == 3)) {
                     Navigator.pushNamed(context, logInScreenRoute);
                   } else if (index != _currentIndex) {
                     setState(() {

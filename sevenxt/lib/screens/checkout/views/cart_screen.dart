@@ -166,7 +166,7 @@ class _CartScreenState extends State<CartScreen> {
                   children: [
                     const Text(
                       'No address found',
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(color: blackColor40),
                     ),
                     const SizedBox(height: defaultPadding / 2),
                     ElevatedButton(
@@ -314,7 +314,7 @@ class _CartScreenState extends State<CartScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select an address'),
-          backgroundColor: Colors.red,
+          backgroundColor: errorColor,
         ),
       );
       return;
@@ -325,7 +325,7 @@ class _CartScreenState extends State<CartScreen> {
         const SnackBar(
           content: Text(
               'Delivery is not available for this pincode. Please try another address.'),
-          backgroundColor: Colors.red,
+          backgroundColor: errorColor,
         ),
       );
       return;
@@ -359,7 +359,7 @@ class _CartScreenState extends State<CartScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(message),
-                  backgroundColor: Colors.red,
+                  backgroundColor: errorColor,
                   duration: const Duration(seconds: 4),
                 ),
               );
@@ -377,7 +377,7 @@ class _CartScreenState extends State<CartScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(errorMessage),
-                backgroundColor: Colors.red,
+                backgroundColor: errorColor,
               ),
             );
           }
@@ -508,7 +508,7 @@ class _CartScreenState extends State<CartScreen> {
                                   ),
                                   IconButton(
                                     icon: const Icon(Icons.delete_outline,
-                                        color: Colors.red),
+                                        color: errorColor),
                                     onPressed: () {
                                       setState(
                                           () => _cart.removeItem(cartItem));

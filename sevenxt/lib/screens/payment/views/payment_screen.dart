@@ -142,7 +142,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(message),
-                backgroundColor: Colors.red,
+                backgroundColor: errorColor,
                 duration: const Duration(seconds: 4),
               ),
             );
@@ -156,7 +156,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Access Restricted: Account pending or rejected."),
-            backgroundColor: Colors.red,
+            backgroundColor: errorColor,
           ),
         );
       }
@@ -415,7 +415,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     if (_selectedAddress == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Please select a shipping address'),
-          backgroundColor: Colors.red));
+          backgroundColor: errorColor));
       return;
     }
 
@@ -424,7 +424,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         const SnackBar(
           content: Text(
               'Delivery is not available for this pincode. Please try another address.'),
-          backgroundColor: Colors.red,
+          backgroundColor: errorColor,
         ),
       );
       return;
@@ -604,7 +604,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           imageUrl: item.product.image,
           quantity: item.quantity,
           colorHex: item.colorHex.isEmpty ? 'FFFFFFFF' : item.colorHex,
-          price: item.product.price.toDouble(),
+          price: item.product.finalPrice, // Use discounted price
           hsnCode: item.product.hsnCode ?? '',
           weightKg: item.product.weightKg,
           lengthCm: item.product.lengthCm,
@@ -690,7 +690,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text("Coupon $_appliedCouponCode applied",
-                      style: const TextStyle(color: Colors.green)),
+                      style: const TextStyle(color: successColor)),
                   TextButton(
                       onPressed: () => setState(() {
                             _appliedCouponCode = null;
@@ -770,7 +770,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               child: Column(
                 children: [
                   const Text('No address found',
-                      style: TextStyle(color: Colors.grey)),
+                      style: TextStyle(color: blackColor40)),
                   const SizedBox(height: defaultPadding / 2),
                   ElevatedButton(
                       onPressed: _selectAddress,
@@ -893,7 +893,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                             "₹${(_displayShippingFee ?? 0.0).toStringAsFixed(2)}")
                                         : const Text("Unavailable",
                                             style: TextStyle(
-                                                color: Colors.red,
+                                                color: errorColor,
                                                 fontWeight: FontWeight.bold)),
                               ]),
                           const SizedBox(height: 8),
@@ -934,7 +934,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   Text(
                                       "-₹${_couponDiscount.toStringAsFixed(2)}",
                                       style:
-                                          const TextStyle(color: Colors.green))
+                                          const TextStyle(color: successColor))
                                 ]),
                           ],
                           const Divider(height: 24),

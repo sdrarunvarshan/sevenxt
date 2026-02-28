@@ -16,6 +16,9 @@ class ColorDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Determine if we need a border (light grey for white/light colors)
+    final bool isLightColor = color == Colors.white;
+
     return GestureDetector(
       onTap: press,
       child: AnimatedContainer(
@@ -25,8 +28,12 @@ class ColorDot extends StatelessWidget {
         width: 40,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border:
-              Border.all(color: isActive ? kPrimaryColor  : Colors.transparent),
+          border: Border.all(
+            color: isActive
+                ? kPrimaryColor
+                : (isLightColor ? borderColor : Colors.transparent),
+            width: isActive ? 2 : 1,
+          ),
         ),
         child: Stack(
           alignment: Alignment.center,

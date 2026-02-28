@@ -74,7 +74,7 @@ class _BestSellersState extends State<BestSellers> {
                 child: const Text(
                   'View All',
                   style: TextStyle(
-                    color: Colors.blue,
+                    color: kPrimaryColor,
                     fontSize: 14,
                   ),
                 ),
@@ -97,7 +97,7 @@ class _BestSellersState extends State<BestSellers> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Icon(Icons.error_outline,
-                          color: Colors.red, size: 40),
+                          color: errorColor, size: 40),
                       const SizedBox(height: 8),
                       const Text('Error loading wearables'),
                       const SizedBox(height: 8),

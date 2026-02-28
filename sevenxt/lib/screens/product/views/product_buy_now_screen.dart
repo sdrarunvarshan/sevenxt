@@ -104,9 +104,9 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
                       children: [
                         Expanded(
                           child: UnitPrice(
-                            // Use product price
-                            price: widget.product?.price ?? 145,
-                            priceAfterDiscount: widget.product?.priceAfetDiscount,
+                            // Use product finalPrice (discounted price if offer active)
+                            price: widget.product?.finalPrice ?? widget.product?.price ?? 145,
+                            priceAfterDiscount: null, // Already included in finalPrice
                             discountPercent: widget.product?.discountPercentUI,
 
                           ),

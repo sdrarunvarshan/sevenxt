@@ -478,7 +478,7 @@ class _B2BSignUpState extends State<B2BSignUpForm> {
                 ),
               ),
               suffixIcon: _phoneVerified
-                  ? const Icon(Icons.verified, color: Colors.green)
+                  ? const Icon(Icons.verified, color: successColor)
                   : null,
             ),
           ),

@@ -77,7 +77,7 @@ class _CategorySectionState extends State<CategorySection> {
                 child: const Text(
                   'View All',
                   style: TextStyle(
-                    color: Colors.blue,
+                    color: kPrimaryColor,
                     fontSize: 14,
                   ),
                 ),

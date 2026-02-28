@@ -136,7 +136,7 @@ class _LogInFormState extends State<LogInForm> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
-            backgroundColor: Colors.red,
+            backgroundColor: errorColor,
             duration: const Duration(seconds: 3),
           ),
         );

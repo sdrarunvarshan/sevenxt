@@ -106,7 +106,7 @@ class Cart {
 
   double get subtotal {
     return _items.fold(
-        0, (total, item) => total + (item.product.price * item.quantity));
+        0, (total, item) => total + (item.product.finalPrice * item.quantity));
   }
   Future<void> loadUserCart(String userIdentifier) async {
     _cartBox = Hive.box('user_settings');

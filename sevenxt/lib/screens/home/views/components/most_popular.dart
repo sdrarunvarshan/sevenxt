@@ -75,7 +75,7 @@ class _MostPopularState extends State<MostPopular> {
                 child: const Text(
                   'View All',
                   style: TextStyle(
-                    color: Colors.blue,
+                    color: kPrimaryColor,
                     fontSize: 14,
                   ),
                 ),
@@ -98,7 +98,7 @@ class _MostPopularState extends State<MostPopular> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Icon(Icons.error_outline,
-                          color: Colors.red, size: 24),
+                          color: errorColor, size: 24),
                       const SizedBox(height: 8),
                       Text('Error loading $_category'),
                       const SizedBox(height: 8),

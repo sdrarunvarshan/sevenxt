@@ -45,6 +45,9 @@ const Color blackColor20 = Color(0xFFD0D0D2);
 const Color blackColor10 = Color(0xFFE8E8E9);
 const Color blackColor5 = Color(0xFFF3F3F4);
 
+// Border color - more visible for card borders
+const Color borderColor = Color(0xFFE0E0E0);
+
 const Color whiteColor = kBackgroundColor;
 const Color whileColor80 = Color(0xFFCCCCCC);
 const Color whileColor60 = Color(0xFF999999);
@@ -53,8 +56,7 @@ const Color whileColor20 = Color(0xFF333333);
 const Color whileColor10 = Color(0xFF191919);
 const Color whileColor5 = Color(0xFF0D0D0D);
 
-
-const Color greyColor = Color(0xFFB8B5C3);
+const Color greyColor = Color(0xFF4A4A4A);
 const Color lightGreyColor = Color(0xFFF0F0F0);
 const Color darkGreyColor = Color(0xFF1C1C25);
 

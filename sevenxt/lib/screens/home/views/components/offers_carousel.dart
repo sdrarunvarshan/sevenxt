@@ -191,8 +191,8 @@ class _OffersCarouselState extends State<OffersCarousel> {
                             const EdgeInsets.only(left: defaultPadding / 4),
                         child: DotIndicator(
                           isActive: index == _selectedIndex,
-                          activeColor: Colors.white70,
-                          inActiveColor: Colors.white54,
+                          activeColor: whiteColor,
+                          inActiveColor: whiteColor,
                         ),
                       ),
                     ),

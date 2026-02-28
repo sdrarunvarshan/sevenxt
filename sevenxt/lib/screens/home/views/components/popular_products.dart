@@ -74,7 +74,7 @@ class _PopularProductsState extends State<PopularProducts> {
                 child: const Text(
                   'View All',
                   style: TextStyle(
-                    color: Colors.blue,
+                    color: kPrimaryColor,
                     fontSize: 14,
                   ),
                 ),
@@ -97,7 +97,7 @@ class _PopularProductsState extends State<PopularProducts> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Icon(Icons.error_outline,
-                          color: Colors.red, size: 40),
+                          color: errorColor, size: 40),
                       const SizedBox(height: 8),
                       Text('Error loading $_category'),
                       const SizedBox(height: 8),

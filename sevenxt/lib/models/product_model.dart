@@ -123,55 +123,112 @@ class ProductModel {
     // ---------- Pricing & Offers ----------
     final bool isB2B = userType.toLowerCase() == 'b2b';
 
+    // Use backend's current_price directly if available (already calculated with date validation)
+    final double? backendCurrentPrice = (json['current_price'] as num?)?.toDouble();
+
     final double compareAtPrice =
         (json['compare_at_price'] as num?)?.toDouble() ?? 0.0;
     final double basePrice = (isB2B
         ? (json['b2b_price'] as num?)?.toDouble() ?? 0.0
         : (json['b2c_price'] as num?)?.toDouble() ?? 0.0);
 
-    // Parse Dates
+    // Parse Dates for UI display only
     final String? startDateStr =
         isB2B ? json['b2b_offer_start_date'] : json['b2c_offer_start_date'];
     final String? endDateStr =
         isB2B ? json['b2b_offer_end_date'] : json['b2c_offer_end_date'];
 
-    final DateTime? offerStartDate =
-        startDateStr != null ? DateTime.tryParse(startDateStr) : null;
-    final DateTime? offerEndDate =
-        endDateStr != null ? DateTime.tryParse(endDateStr) : null;
+    // Helper function to parse backend date format
+    DateTime? _parseBackendDate(String? dateStr) {
+      if (dateStr == null) return null;
+      try {
+        // Handle "2025-12-15 15:49:00" format
+        return DateTime.parse(dateStr.replaceAll(' ', 'T'));
+      } catch (e) {
+        return null;
+      }
+    }
 
-    // Check if offer is active based on dates
+    final DateTime? offerStartDate = _parseBackendDate(startDateStr);
+    final DateTime? offerEndDate = _parseBackendDate(endDateStr);
+
+    // Check if time-limited offer is active based on dates
+    // Backend provides b2c_active_offer / b2b_active_offer as flag
     final DateTime now = DateTime.now();
-    bool isOfferActiveByDate = true;
-    if (offerStartDate != null && now.isBefore(offerStartDate))
-      isOfferActiveByDate = false;
-    if (offerEndDate != null && now.isAfter(offerEndDate))
-      isOfferActiveByDate = false;
+    bool isTimeLimitedOfferActive = false;
 
-    // Check backend active flag (double precision in DB, check > 0)
+    // Get active offer flag from backend
     final double activeOfferFlag = isB2B
         ? (json['b2b_active_offer'] as num?)?.toDouble() ?? 0.0
         : (json['b2c_active_offer'] as num?)?.toDouble() ?? 0.0;
 
-    final bool isActuallyActive = activeOfferFlag > 0 && isOfferActiveByDate;
+    // Check if time-limited offer dates are valid (not expired, not future)
+    // If only end date exists and hasn't expired, offer is active
+    // If both dates exist, offer must be within the date range
+    if (activeOfferFlag > 0 && offerEndDate != null) {
+      final endOfDay = DateTime(offerEndDate.year, offerEndDate.month, offerEndDate.day, 23, 59, 59);
+      if (now.isBefore(endOfDay)) {
+        // End date not expired, check start date
+        if (offerStartDate == null) {
+          // No start date means offer is already active
+          isTimeLimitedOfferActive = true;
+        } else if (now.isAfter(offerStartDate) || now.isAtSameMomentAs(offerStartDate)) {
+          // Start date has passed
+          isTimeLimitedOfferActive = true;
+        }
+        // If now is before start date, offer hasn't started yet (isTimeLimitedOfferActive = false)
+      }
+      // If end date is expired, offer is not active
+    }
+    // If no end date but has start date and start date has passed, offer is active
+    else if (activeOfferFlag > 0 && offerStartDate != null && (now.isAfter(offerStartDate) || now.isAtSameMomentAs(offerStartDate))) {
+      isTimeLimitedOfferActive = true;
+    }
 
-    final double? offerPrice = isActuallyActive
-        ? (isB2B
-            ? (json['b2b_offer_price'] as num?)?.toDouble()
-            : (json['b2c_offer_price'] as num?)?.toDouble())
-        : null;
+    // Calculate current price: Time-limited offer > Regular price
+    double currentPrice;
 
-    final double? dbDiscountPercent = isB2B
-        ? (json['b2b_discount'] as num?)?.toDouble()
-        : (json['b2c_discount'] as num?)?.toDouble();
+    // Priority 1: If backend sends current_price (already calculated with date validation), use it
+    if (backendCurrentPrice != null && backendCurrentPrice > 0) {
+      currentPrice = backendCurrentPrice;
+    }
+    // Priority 2: If time-limited offer is active (based on flag and dates), use offer price
+    else if (isTimeLimitedOfferActive) {
+      // Use offer price from backend
+      final double? offerPrice = isB2B
+          ? (json['b2b_offer_price'] as num?)?.toDouble()
+          : (json['b2c_offer_price'] as num?)?.toDouble();
 
-    // UI price mapping:
-    // priceAfetDiscount is the current price to show (offer price or base price)
-    // price is the strike price (compare_at_price if exists, else basePrice if there's an offer)
-    double currentPrice = offerPrice ?? basePrice;
-    double strikePrice = (compareAtPrice > 0)
-        ? compareAtPrice
-        : (offerPrice != null ? basePrice : basePrice);
+      if (offerPrice != null && offerPrice > 0) {
+        currentPrice = offerPrice;
+      } else {
+        // Fallback: Use base price if no offer price
+        currentPrice = basePrice;
+      }
+    }
+    // Priority 3: Use regular B2B/B2C price (permanent discount already applied)
+    else {
+      currentPrice = basePrice;
+    }
+
+    // Strike price = compare_at_price if exists, else base price
+    double strikePrice = (compareAtPrice > 0) ? compareAtPrice : basePrice;
+
+    // Calculate discount percentage
+    // If time-limited offer is active, show that discount, otherwise show regular discount
+    double? discountPercent;
+    if (isTimeLimitedOfferActive && compareAtPrice > 0 && currentPrice < compareAtPrice) {
+      // Calculate time-limited offer discount
+      discountPercent = ((compareAtPrice - currentPrice) / compareAtPrice) * 100;
+    } else if (currentPrice < compareAtPrice && compareAtPrice > 0) {
+      // Calculate discount from regular pricing
+      discountPercent = ((compareAtPrice - currentPrice) / compareAtPrice) * 100;
+    } else {
+      // Fallback to stored discount value from backend
+      discountPercent = isB2B
+          ? (json['b2b_discount'] as num?)?.toDouble()
+          : (json['b2c_discount'] as num?)?.toDouble();
+    }
 
     dynamic parsedInfo;
     if (json['info'] != null) {
@@ -201,7 +258,7 @@ class ProductModel {
       compareAtPrice: compareAtPrice,
       price: strikePrice,
       priceAfetDiscount: currentPrice,
-      discountPercent: dbDiscountPercent,
+      discountPercent: discountPercent,
       offerStartDate: offerStartDate,
       offerEndDate: offerEndDate,
       stock: (json['stock'] as num?)?.toInt() ?? 0,

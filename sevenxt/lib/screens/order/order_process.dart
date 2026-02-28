@@ -169,9 +169,9 @@ class OrderProgress extends StatelessWidget {
           const SizedBox(height: 4),
           Row(
             children: [
-              Expanded(child: Container(height: 2, color: completed ? successColor : Colors.grey.shade300)),
+              Expanded(child: Container(height: 2, color: completed ? successColor : blackColor20)),
               _statusWidget(completed: completed, isCurrent: stepStatus == orderStatus, stepStatus: stepStatus),
-              Expanded(child: Container(height: 2, color: isLast ? Colors.transparent : (completed ? successColor : Colors.grey.shade300))),
+              Expanded(child: Container(height: 2, color: isLast ? Colors.transparent : (completed ? successColor : blackColor20))),
             ],
           ),
         ],
@@ -180,7 +180,7 @@ class OrderProgress extends StatelessWidget {
   }
 
   Widget _statusWidget({required bool completed, required bool isCurrent, OrderProcessStatus? stepStatus}) {
-    Color bgColor = Colors.grey.shade300;
+    Color bgColor = blackColor20;
     IconData? icon;
     Color iconColor = Colors.white;
 

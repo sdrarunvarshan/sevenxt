@@ -289,8 +289,8 @@ class _SearchScreenState extends State<SearchScreen> {
                   image: product.image,
                   brandName: product.brandName,
                   title: product.title,
-                  price: product.price.toDouble(),
-                  priceAfetDiscount: product.priceAfetDiscount?.toDouble(),
+                  price: product.finalPrice, // Use finalPrice (discounted)
+                  priceAfetDiscount: null, // Already included in finalPrice
                   rating: product.rating,
                   reviews: product.reviews,
                   dicountpercent: product.discountPercentUI,

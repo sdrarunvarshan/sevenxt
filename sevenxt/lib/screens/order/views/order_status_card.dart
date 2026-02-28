@@ -142,7 +142,7 @@ class OrderStatusCard extends StatelessWidget {
                 height: imageSize,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(color: blackColor20),
                   image: product.imageUrl.isNotEmpty
                       ? DecorationImage(
                           image: NetworkImage(product.imageUrl),
@@ -162,7 +162,7 @@ class OrderStatusCard extends StatelessWidget {
                 height: imageSize,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  color: Colors.grey.shade200,
+                  color: borderColor,
                 ),
                 child: Center(
                   child: Text(

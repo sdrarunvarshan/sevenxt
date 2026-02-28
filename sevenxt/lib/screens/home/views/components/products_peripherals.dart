@@ -50,7 +50,7 @@ class _PopularProductsPeripheralsState
     return Container(
       margin: const EdgeInsets.symmetric(vertical: defaultPadding / 2),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: whiteColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -142,7 +142,7 @@ class _PopularProductsPeripheralsState
                         const SizedBox(height: 8),
                         Text(
                           'Check your connection',
-                          style: TextStyle(color: Colors.grey.shade600),
+                          style: TextStyle(color: blackColor60),
                         ),
                         const SizedBox(height: 12),
                         ElevatedButton(
@@ -176,7 +176,7 @@ class _PopularProductsPeripheralsState
                         Icon(
                           Icons.keyboard,
                           size: 60,
-                          color: Colors.grey.shade400,
+                          color: blackColor40,
                         ),
                         const SizedBox(height: 12),
                         Text(
@@ -184,13 +184,13 @@ class _PopularProductsPeripheralsState
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
                             fontSize: 16,
-                            color: Colors.grey.shade700,
+                            color: blackColor80,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Coming soon',
-                          style: TextStyle(color: Colors.grey.shade600),
+                          style: TextStyle(color: blackColor60),
                         ),
                         const SizedBox(height: 12),
                         OutlinedButton(

@@ -93,7 +93,7 @@ class _ReturnRequestScreenState extends State<ReturnRequestScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select a reason for return'),
-          backgroundColor: Colors.red,
+          backgroundColor: errorColor,
         ),
       );
       return;
@@ -104,7 +104,7 @@ class _ReturnRequestScreenState extends State<ReturnRequestScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please specify your return reason'),
-          backgroundColor: Colors.red,
+          backgroundColor: errorColor,
         ),
       );
       return;
@@ -115,7 +115,7 @@ class _ReturnRequestScreenState extends State<ReturnRequestScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please provide additional details'),
-          backgroundColor: Colors.red,
+          backgroundColor: errorColor,
         ),
       );
       return;
@@ -126,7 +126,7 @@ class _ReturnRequestScreenState extends State<ReturnRequestScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please upload at least one image'),
-          backgroundColor: Colors.red,
+          backgroundColor: errorColor,
         ),
       );
       return;
@@ -156,7 +156,7 @@ class _ReturnRequestScreenState extends State<ReturnRequestScreen> {
         // Handle the case where there are no products in the order
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Order has no products to return.'),
-          backgroundColor: Colors.red,
+          backgroundColor: errorColor,
         ));
         return;
       }
@@ -176,7 +176,7 @@ class _ReturnRequestScreenState extends State<ReturnRequestScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to submit return request: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          backgroundColor: errorColor,
         ),
       );
     } finally {

@@ -222,7 +222,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: errorColor),
             child: const Text('Delete'),
           ),
         ],

@@ -50,11 +50,11 @@ class _PopularProductsTVEntertainmentState
     return Container(
       margin: const EdgeInsets.symmetric(vertical: defaultPadding / 2),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: whiteColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: blackColor.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 3,
             offset: const Offset(0, 1),
@@ -103,7 +103,7 @@ class _PopularProductsTVEntertainmentState
                   child: const Text(
                     'View All',
                     style: TextStyle(
-                      color: Colors.blue,
+                      color: kPrimaryColor,
                       fontSize: 14,
                     ),
                   ),
@@ -128,21 +128,21 @@ class _PopularProductsTVEntertainmentState
                       children: [
                         Icon(
                           Icons.videocam_off,
-                          color: Colors.red.shade700,
+                          color: errorColor,
                           size: 50,
                         ),
                         const SizedBox(height: 12),
                         Text(
                           'Streaming Error',
                           style: TextStyle(
-                            color: Colors.red.shade700,
+                            color: errorColor,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Failed to load entertainment products',
-                          style: TextStyle(color: Colors.grey.shade600),
+                          style: TextStyle(color: blackColor40),
                         ),
                         const SizedBox(height: 12),
                         ElevatedButton(
@@ -176,7 +176,7 @@ class _PopularProductsTVEntertainmentState
                         Icon(
                           Icons.speaker,
                           size: 60,
-                          color: Colors.grey.shade400,
+                          color: blackColor40,
                         ),
                         const SizedBox(height: 12),
                         Text(
@@ -184,13 +184,13 @@ class _PopularProductsTVEntertainmentState
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
                             fontSize: 16,
-                            color: Colors.grey.shade700,
+                            color: blackColor80,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Check back for home theatre systems',
-                          style: TextStyle(color: Colors.grey.shade600),
+                          style: TextStyle(color: blackColor60),
                         ),
                         const SizedBox(height: 12),
                         OutlinedButton(
