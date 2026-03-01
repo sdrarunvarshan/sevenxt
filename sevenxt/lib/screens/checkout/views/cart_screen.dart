@@ -32,14 +32,12 @@ class _CartScreenState extends State<CartScreen> {
   bool _isCalculatingShipping = false;
 
   Address? _selectedAddress;
-  bool _isLoadingAddress = true;
   late String _resolvedUserType;
 
   @override
   void initState() {
     super.initState();
     _initCartScreen();
-    _fetchDefaultAddress();
   }
 
   Future<void> _initCartScreen() async {
@@ -55,12 +53,10 @@ class _CartScreenState extends State<CartScreen> {
 
     if (!mounted) return;
     setState(() {});
-    await _fetchDefaultAddress();
+    _fetchDefaultAddress();
   }
 
   Future<void> _fetchDefaultAddress() async {
-    setState(() => _isLoadingAddress = true);
-
     try {
       final response = await ApiService.get('/users/addresses');
       final List data = response['data'];
@@ -71,188 +67,18 @@ class _CartScreenState extends State<CartScreen> {
           orElse: () => data.first,
         );
 
-        setState(() {
-          _selectedAddress = Address.fromJson(defaultAddress);
-          _isLoadingAddress = false;
-        });
-        _calculateShipping();
-      } else {
-        setState(() {
-          _selectedAddress = null;
-          _isLoadingAddress = false;
-        });
+        if (mounted) {
+          setState(() {
+            _selectedAddress = Address.fromJson(defaultAddress);
+          });
+          _calculateShipping();
+        }
       }
     } catch (e) {
       print('Error fetching address: $e');
-      setState(() => _isLoadingAddress = false);
     }
   }
 
-  Future<void> _selectAddress() async {
-    try {
-      final response = await ApiService.get('/users/addresses');
-      final List<dynamic> addressesList = response['data'];
-
-      if (addressesList.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No addresses available')),
-          );
-        }
-        return;
-      }
-
-      final addresses =
-          addressesList.map((addr) => Address.fromJson(addr)).toList();
-
-      if (mounted) {
-        showModalBottomSheet<Address>(
-          context: context,
-          builder: (context) => ListView.builder(
-            itemCount: addresses.length,
-            itemBuilder: (context, index) {
-              final address = addresses[index];
-              return ListTile(
-                title: Text(address.name),
-                subtitle: Text(
-                  '${address.address}, ${address.city}, ${address.country}',
-                ),
-                trailing: address.isDefault
-                    ? const Chip(label: Text('Default'))
-                    : null,
-                onTap: () {
-                  Navigator.pop(context, address);
-                },
-              );
-            },
-          ),
-        ).then((result) {
-          if (result != null) {
-            setState(() {
-              _selectedAddress = result;
-            });
-          }
-          _calculateShipping();
-        });
-      }
-    } catch (e) {
-      print('Error fetching addresses: $e');
-    }
-  }
-
-  Widget _buildAddressSection() {
-    if (_isLoadingAddress) {
-      return Padding(
-        padding: const EdgeInsets.all(defaultPadding),
-        child: Skeleton(height: 100, width: double.infinity),
-      );
-    }
-
-    if (_selectedAddress == null) {
-      return Padding(
-        padding: const EdgeInsets.all(defaultPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Shipping Address',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: defaultPadding / 2),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(defaultPadding),
-                child: Column(
-                  children: [
-                    const Text(
-                      'No address found',
-                      style: TextStyle(color: blackColor40),
-                    ),
-                    const SizedBox(height: defaultPadding / 2),
-                    ElevatedButton(
-                      onPressed: _selectAddress,
-                      child: const Text('Add Address'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.all(defaultPadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Shipping Address',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              TextButton(
-                onPressed: _selectAddress,
-                child: const Text('Change'),
-              ),
-            ],
-          ),
-          const SizedBox(height: defaultPadding / 2),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(defaultPadding),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _selectedAddress!.name,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      if (_selectedAddress!.isDefault)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: kPrimaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Text(
-                            'Default',
-                            style: TextStyle(
-                              color: kPrimaryColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: defaultPadding / 2),
-                  Text(
-                    _selectedAddress!.address,
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${_selectedAddress!.city},${_selectedAddress!.state} ${_selectedAddress!.country}, ${_selectedAddress!.postalCode}',
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   double _getItemPrice(ProductModel product) {
     return (product.priceAfetDiscount != null &&
@@ -310,17 +136,7 @@ class _CartScreenState extends State<CartScreen> {
   bool _isCheckingStatus = false;
 
   Future<void> _proceedToCheckout() async {
-    if (_selectedAddress == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select an address'),
-          backgroundColor: errorColor,
-        ),
-      );
-      return;
-    }
-
-    if (_shippingFee <= 0 && !_isCalculatingShipping) {
+    if (_selectedAddress != null && _shippingFee <= 0 && !_isCalculatingShipping) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -443,7 +259,6 @@ class _CartScreenState extends State<CartScreen> {
           constraints: const BoxConstraints(maxWidth: 1200),
           child: Column(
             children: [
-              _buildAddressSection(),
               Expanded(
                 child: _cart.items.isEmpty
                     ? Center(
@@ -597,8 +412,16 @@ class _CartScreenState extends State<CartScreen> {
                 height: 16,
                 width: 16,
                 child: CircularProgressIndicator(strokeWidth: 2))
-            : Text('₹${_shippingFee.toStringAsFixed(2)}'),
+            : Text(
+                _selectedAddress == null
+                    ? 'Calculated at checkout'
+                    : '₹${_shippingFee.toStringAsFixed(2)}',
+                style: _selectedAddress == null
+                    ? const TextStyle(fontStyle: FontStyle.italic, color: greyColor)
+                    : null,
+              ),
       ],
     );
   }
 }
+
